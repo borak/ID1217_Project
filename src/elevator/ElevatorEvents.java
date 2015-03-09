@@ -1,7 +1,9 @@
 package elevator;
 
+import static elevator.ElevatorIO.in;
 import java.awt.event.*;
 import java.io.PrintStream;
+import java.util.StringTokenizer;
 
 /**
  * Title:        Green Elevator
@@ -25,6 +27,7 @@ public class ElevatorEvents extends WindowAdapter implements ActionListener {
   public ElevatorEvents(PrintStream out, ElevatorController elevatorController) {
     super();
     this.out = out;
+    this.elevatorController = elevatorController;
   }
   public ElevatorEvents(PrintStream out) {
     super();
@@ -43,7 +46,29 @@ public class ElevatorEvents extends WindowAdapter implements ActionListener {
    */
   public void actionPerformed(ActionEvent e) {
     out.println(e.getActionCommand());
-    elevatorController.pressPanel(1, 2);
+    
+    String[] tokens = new String[3];
+    StringTokenizer tokenizer = new StringTokenizer(e.getActionCommand());
+    if(tokenizer.countTokens() < 1) return;
+
+    tokens[0] = tokenizer.nextToken();
+
+    if (tokens[0].equalsIgnoreCase("p") || tokens[0].equalsIgnoreCase("panel")) {
+        if(tokenizer.countTokens() < 3) return;
+        try {
+            elevatorController.pressPanel(Integer.parseInt(tokenizer.nextToken()), Integer.parseInt(tokenizer.nextToken()));
+        } catch(Exception ex) {
+            System.err.println("Illegal command: " + e.getActionCommand());
+        }
+            
+    } else if (tokens[0].equalsIgnoreCase("b") || tokens[0].equalsIgnoreCase("button")) {
+        if(tokenizer.countTokens() < 2) return;
+        try {
+            elevatorController.pressButton(Integer.parseInt(tokenizer.nextToken()));
+        } catch(Exception ex) {
+            System.err.println("Illegal command: " + e.getActionCommand());
+        }
+    }
   }
   /**
    * Invoked when the window is closing. The application exits.
