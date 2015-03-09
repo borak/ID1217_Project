@@ -29,11 +29,15 @@ public class ElevatorController {
     private PrintWriter out;
     private BufferedReader in;
 
-    public ElevatorController(Elevator[] allElevators) {
-        this.allElevators = allElevators;
+    public ElevatorController(Elevators elevators) {
+        this.allElevators = elevators.allElevators;
         
         createSocket("localhost", 4711);
         
+    }
+
+    ElevatorController() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     public void createSocket(String hostName, int port) {
