@@ -108,7 +108,7 @@ public class ElevatorGUI extends JFrame implements ActionListener, ChangeListene
     Container contentPane = getContentPane();
     contentPane.setLayout(new BorderLayout());
     io = new ElevatorIO(elevators);
-    ElevatorEvents listener = new ElevatorEvents(io.out);
+    ElevatorEvents listener = new ElevatorEvents(io.out, new ElevatorController());
     graphics = new ElevatorGraphics(elevators);
     addWindowListener(listener);
     // create arrays for widgets
