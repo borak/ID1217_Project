@@ -1,5 +1,9 @@
 package elevator;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
 import java.util.ArrayList;
 
 /**
@@ -17,17 +21,52 @@ public class ElevatorController {
 
     private Elevator elevator;
     //public static final int UP = 1, DOWN = -1, STOPED = 0;
-    private int floor, panel, el, velocity;
+    private int currentFloor, panel, el, velocity;
     private ArrayList<Integer> semList;
     private ArrayList floors;
     private Elevator[] allElevators;
+    private Socket socket;
+    private PrintWriter out;
+    private BufferedReader in;
 
     public ElevatorController(Elevator[] allElevators) {
-        this.allElevators = allElevators;        
+        this.allElevators = allElevators;
+        
+        createSocket("localhost", 4711);
+        
     }
 
-    public void pressButton(int floor) {
-        this.floor = floor;
+    public void createSocket(String hostName, int port) {
+        try {
+            socket = new Socket(hostName, port);
+            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void pressButton(int currentFloor) {
+        this.currentFloor = currentFloor;
+        double distance = 0, tempDistance = 0;
+        Elevator el = elevator;
+        try {
+            startWaitTimer();
+
+            for (int i = 0; i < allElevators.length; i++) {
+                Elevator tempEl = allElevators[i];
+                distance = (tempEl.Getpos() - currentFloor);
+                if (tempDistance < distance) {
+                    distance = tempDistance;
+                    el = tempEl;
+                }
+            }
+            out.print("m " + el.getNumber() + " " + currentFloor + " ");
+
+        } finally {
+            stopWaitTimer();
+        }
     }
 
     public void pressPanel(int elevatorIndex, int floor) {
@@ -36,27 +75,36 @@ public class ElevatorController {
             Elevator elevator = allElevators[elevatorIndex];
             double pos = elevator.Getpos();
             //if((int)pos != pos) throw Exception("moving"); 
-            if(pos == floor) {
+            if (pos == floor) {
                 return;
-            } else if(pos > floor) {
+            } else if (pos > floor) {
                 elevator.Setdir(Elevators.DOWN);
-            } else /* if(pos < floor) */{
+            } else /* if(pos < floor) */ {
                 elevator.Setdir(Elevators.UP);
-            } 
+            }
         } finally {
             stopTimer();
         }
     }
 
     public void setVelocity(double velocity) {
-        
+
     }
 
     public void startTimer() {
 
     }
-    
+
     public void stopTimer() {
 
     }
+
+    private void startWaitTimer() {
+
+    }
+
+    private void stopWaitTimer() {
+
+    }
+
 }
