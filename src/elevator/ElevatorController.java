@@ -16,50 +16,47 @@ import java.util.ArrayList;
 public class ElevatorController {
 
     private Elevator elevator;
-    public static final int UP = 1, DOWN = -1, STOPED = 0;
+    //public static final int UP = 1, DOWN = -1, STOPED = 0;
     private int floor, panel, el, velocity;
     private ArrayList<Integer> semList;
     private ArrayList floors;
-    private Elevator[] elevators;
+    private Elevator[] allElevators;
 
-    public ElevatorController(Elevators elevators) {
-        this.elevators = elevators.allElevators;
-    }
-
-    private boolean calculateWhereToGo(int floor, Elevator elevator) {
-        startTimer();
-
-        int eDir = elevator.Getdir();
-        double ePos = elevator.Getpos();
-
-//        if (semList.get(floor)) {
-//            
-//        }
-        
-        if ((eDir == UP || eDir == STOPED) && (ePos < floor)) {
-            elevator.Setdir(UP);
-        } else if ((eDir == DOWN || eDir == STOPED) && (ePos > floor)) {
-            elevator.Setdir(DOWN);
-        }
-        return false;
+    public ElevatorController(Elevator[] allElevators) {
+        this.allElevators = allElevators;        
     }
 
     public void pressButton(int floor) {
         this.floor = floor;
     }
 
-    public void pressPanel(int panel, Elevator elevator) {
-        this.panel = panel;
-        this.elevator = elevator;
-        calculateWhereToGo(panel, elevator);
+    public void pressPanel(int elevatorIndex, int floor) {
+        startTimer();
+        try {
+            Elevator elevator = allElevators[elevatorIndex];
+            double pos = elevator.Getpos();
+            //if((int)pos != pos) throw Exception("moving"); 
+            if(pos == floor) {
+                return;
+            } else if(pos > floor) {
+                elevator.Setdir(Elevators.DOWN);
+            } else /* if(pos < floor) */{
+                elevator.Setdir(Elevators.UP);
+            } 
+        } finally {
+            stopTimer();
+        }
     }
 
-    public void setVelocity(int velocity) {
-        this.velocity = velocity;
+    public void setVelocity(double velocity) {
+        
     }
 
     public void startTimer() {
 
     }
+    
+    public void stopTimer() {
 
+    }
 }

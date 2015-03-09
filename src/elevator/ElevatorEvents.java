@@ -18,9 +18,14 @@ import java.io.PrintStream;
 public class ElevatorEvents extends WindowAdapter implements ActionListener {
 
   private java.io.PrintStream out;
+  private ElevatorController elevatorController;
   /**
    * Creates an instance ElevatorEvents listener
    */
+  public ElevatorEvents(PrintStream out, ElevatorController elevatorController) {
+    super();
+    this.out = out;
+  }
   public ElevatorEvents(PrintStream out) {
     super();
     this.out = out;
@@ -38,6 +43,7 @@ public class ElevatorEvents extends WindowAdapter implements ActionListener {
    */
   public void actionPerformed(ActionEvent e) {
     out.println(e.getActionCommand());
+    elevatorController.pressPanel(1, 2);
   }
   /**
    * Invoked when the window is closing. The application exits.
