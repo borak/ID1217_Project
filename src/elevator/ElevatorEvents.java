@@ -28,11 +28,9 @@ public class ElevatorEvents extends WindowAdapter implements ActionListener {
     super();
     this.out = out;
     this.elevatorController = elevatorController;
+
   }
-  public ElevatorEvents(PrintStream out) {
-    super();
-    this.out = out;
-  }
+
   /**
    * Invoked when a button is pressed on a floor or on an inside button panel.
    * Prints an action commands associated with the button to the output stream

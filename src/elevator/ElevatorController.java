@@ -61,7 +61,7 @@ public class ElevatorController implements Runnable {
 
     public void pressButton(int currentFloor) {
         System.out.println("button pressed on floor " + currentFloor);
-        stream.println("m 2 1");   // funkar ej
+        stream.println("m 2 1");   
         stream.flush();
 
         this.currentFloor = currentFloor;
