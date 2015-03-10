@@ -111,13 +111,11 @@ public class Elevator {
             return;
         }
 
-        System.out.println("f % 1 = " + f % 1);
+        //System.out.println("f % 1 = " + f % 1);
         if (f % 1 < 0.0001) {
-            synchronized (observers) {
-                for (ElevatorObserver observer : observers) {
-                    System.out.println("SIGNALING OBSERVERS");
-                    observer.signalPosition((int) f);
-                }
+            for (ElevatorObserver observer : observers) {
+                System.out.println("SIGNALING OBSERVERS");
+                observer.signalPosition((int) f);
             }
         }
 

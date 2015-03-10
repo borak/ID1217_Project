@@ -132,10 +132,13 @@ public class ElevatorController implements Runnable {
             stream.println("m " + elevator.getNumber() + " " + observer.getButton().getDir());
 
             elevator.registerObserver(observer);
+
+            // stream.println("m " + elevator.getNumber() + " 0");
             observer.waitPosition();
 
             stream.println("m " + elevator.getNumber() + " 0");
             stream.println("d " + elevator.getNumber() + " 1");
+            elevator.removeObserver(observer);
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException ex) {
@@ -209,7 +212,15 @@ public class ElevatorController implements Runnable {
         @Override
         public void signalPosition(int floor) {
             synchronized (condition) {
-                condition.signal();
+                try {
+                    lock.lock();
+                    System.out.println("trying to signal..");
+                    condition.signal();
+                    condition.signalAll();
+                    System.out.println(" signal success?");
+                } finally {
+                    lock.unlock();
+                }
             }
         }
 
@@ -220,33 +231,33 @@ public class ElevatorController implements Runnable {
 
             if (button.getDir() > 0) {
                 System.out.println("button dir  = " + button.getDir() + " elevator pos  = " + elevator.Getpos() + " floor = " + floor);
-                synchronized (elevator.motorLock) {
-                    pos = elevator.Getpos();
-                }
-                while (pos <= floor) {
+//                synchronized (elevator.motorLock) {
+//                    pos = elevator.Getpos();
+//                }
+                while (elevator.Getpos() <= floor) {
+                    System.out.println("loopy 1");
                     synchronized (condition) {
-                        try {
-                            System.out.println("condition waiting...");
-                            condition.wait();
-                            System.out.println("conrition signaled!");
-                        } catch (InterruptedException ex) {
-                            Logger.getLogger(ElevatorController.class.getName()).log(Level.SEVERE, null, ex);
-                        }
+                        //   try {
+                        //condition.wait();
+                        System.out.println(" conditon SIGNALED!");
+//                        } catch (InterruptedException ex) {
+//                            Logger.getLogger(ElevatorController.class.getName()).log(Level.SEVERE, null, ex);
+//                        }
                     }
-                    synchronized (elevator.motorLock) {
-                        pos = elevator.Getpos();
-                    }
+//                    synchronized (elevator.motorLock) {
+//                        pos = elevator.Getpos();
+//                    }
                     // TODO: skriv till ström s
                 }
             } else {
                 while (elevator.Getpos() >= floor) {
-                    synchronized (condition) {
-                        try {
-                            condition.wait();
-                        } catch (InterruptedException ex) {
-                            Logger.getLogger(ElevatorController.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-                    }
+                    System.out.println("loopy 2");
+                    //  synchronized (condition) {
+//                        try {
+//                          //  condition.wait();
+//                        } catch (InterruptedException ex) {
+//                            Logger.getLogger(ElevatorController.class.getName()).log(Level.SEVERE, null, ex);
+//                        }
                 }
             }
             elevator.removeObserver(this);
