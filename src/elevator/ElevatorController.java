@@ -26,7 +26,7 @@ public class ElevatorController implements Runnable {
     //public static final int UP = 1, DOWN = -1, STOPED = 0;
     private int currentFloor, panel, el, velocity;
     private ArrayList<Integer> semList;
-    private ArrayList floors;
+    private ArrayList activeElevators = new ArrayList();
     private Elevator[] allElevators;
     private Socket socket;
     private PrintWriter stream;
@@ -109,22 +109,30 @@ public class ElevatorController implements Runnable {
                 FloorButton button = new FloorButton(currentFloor, dir);
                 InnerObserver observer = new InnerObserver(elevator, button);
                 elevator.registerObserver(observer);
+                handleButtonQueue(elevator);
 
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            //stopWaitTimer();
+        } finally {
+            stopWaitTimer();
         }
 
     }
 
-    public void handleButtonQueue() {
-        FloorButton button = elevator.getNextObserver();
-        while (button != null) {
+    public void handleButtonQueue(Elevator elevator) {
+        synchronized (activeElevators) {
+            if (activeElevators.contains(elevator)) {
+                return;
+            }
+            activeElevators.add(elevator);
+        }
 
-            stream.println("m " + elevator.getNumber() + " " + button.getDir());
+        ElevatorObserver observer = elevator.getNextObserver();
+        while (observer != null) {
+            System.out.println("m " + elevator.getNumber() + " " + observer.getButton().getDir());
+            stream.println("m " + elevator.getNumber() + " " + observer.getButton().getDir());
 
-            elevator.addPressedButton(button);
+            elevator.registerObserver(observer);
+            observer.waitPosition();
 
             stream.println("m " + elevator.getNumber() + " 0");
             stream.println("d " + elevator.getNumber() + " 1");
@@ -141,7 +149,10 @@ public class ElevatorController implements Runnable {
                 ex.printStackTrace();
             }
 
-            button = elevator.getNextObserver();
+            observer = elevator.getNextObserver();
+        }
+        synchronized (activeElevators) {
+            activeElevators.remove(elevator);
         }
     }
 
@@ -171,8 +182,7 @@ public class ElevatorController implements Runnable {
 
     }
 
-    public
-            void stopTimer() {
+    public void stopTimer() {
 
     }
 
@@ -203,22 +213,33 @@ public class ElevatorController implements Runnable {
             }
         }
 
-        void waitPosition(FloorButton button) {
+        @Override
+        public void waitPosition() {
             int floor = button.getFloor();
+            double pos;
 
             if (button.getDir() > 0) {
-                while (elevator.Getpos() >= floor) {
+                System.out.println("button dir  = " + button.getDir() + " elevator pos  = " + elevator.Getpos() + " floor = " + floor);
+                synchronized (elevator.motorLock) {
+                    pos = elevator.Getpos();
+                }
+                while (pos <= floor) {
                     synchronized (condition) {
                         try {
+                            System.out.println("condition waiting...");
                             condition.wait();
+                            System.out.println("conrition signaled!");
                         } catch (InterruptedException ex) {
                             Logger.getLogger(ElevatorController.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     }
+                    synchronized (elevator.motorLock) {
+                        pos = elevator.Getpos();
+                    }
                     // TODO: skriv till ström s
                 }
             } else {
-                while (elevator.Getpos() <= floor) {
+                while (elevator.Getpos() >= floor) {
                     synchronized (condition) {
                         try {
                             condition.wait();
@@ -228,21 +249,21 @@ public class ElevatorController implements Runnable {
                     }
                 }
             }
-            elevator.removeButton(button);
+            elevator.removeObserver(this);
 
         }
 
         public FloorButton getButton() {
             return button;
         }
-        
+
         public int getFloor() {
             return button.getFloor();
         }
-        
+
         public int getDir() {
             return button.getDir();
         }
-        
+
     }
 }

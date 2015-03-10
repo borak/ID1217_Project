@@ -6,6 +6,10 @@ package elevator;
  */
 interface ElevatorObserver {
 
-    public void signalPosition(int floor);
+    void  signalPosition(int floor);
+
+    FloorButton getButton();
+
+    void waitPosition();
 
 }

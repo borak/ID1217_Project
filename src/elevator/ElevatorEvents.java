@@ -54,22 +54,24 @@ public class ElevatorEvents extends WindowAdapter implements ActionListener {
                 }
                 tokens[0] = tokenizer.nextToken();
                 if (tokens[0].equalsIgnoreCase("p") || tokens[0].equalsIgnoreCase("panel")) {
-                    if (tokenizer.countTokens() < 3) {
+                    if (tokenizer.countTokens() < 2) {
                         return;
                     }
                     try {
                         elevatorController.pressPanel(Integer.parseInt(tokenizer.nextToken()), Integer.parseInt(tokenizer.nextToken()));
                     } catch (Exception ex) {
                         System.err.println("Illegal command: " + e.getActionCommand());
+                        ex.printStackTrace();
                     }
                 } else if (tokens[0].equalsIgnoreCase("b") || tokens[0].equalsIgnoreCase("button")) {
                     if (tokenizer.countTokens() < 2) {
-                        //return;
+                        return;
                     }
                     try {
                         elevatorController.pressButton(Integer.parseInt(tokenizer.nextToken()), Integer.parseInt(tokenizer.nextToken()));
                     } catch (Exception ex) {
                         System.err.println("Illegal command: " + e.getActionCommand());
+                        ex.printStackTrace();
                     }
                 }
             }
