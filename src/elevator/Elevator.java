@@ -1,5 +1,11 @@
 package elevator;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.swing.JComponent;
 
 /**
@@ -56,6 +62,9 @@ public class Elevator {
     private JComponent window;
     private JComponent scale;
 
+    private Map<ElevatorObserver, Integer> observers = new HashMap();
+    private ArrayList<FloorButton> buttonsPressed = new ArrayList();
+
     /**
      * Constructs an instance of <code>Elevator</code> that represents the
      * elevator with the given number. Sets the position of the elevator cabin
@@ -70,6 +79,24 @@ public class Elevator {
         boxpos = 0.0;
         this.topFloor = Elevators.topFloor;
         this.number = number;
+    }
+
+    public void registerObserver(ElevatorObserver observer, int floor) {
+        synchronized (observers) {
+            observers.put(observer, floor);
+        }
+    }
+
+    public void addPressedButton(FloorButton button) {
+        synchronized (buttonsPressed) {
+            buttonsPressed.add(button);
+        }
+    }
+
+    public void removeButton(FloorButton button) {
+        synchronized (buttonsPressed) {
+            buttonsPressed.remove(button);
+        }
     }
 
     /**
@@ -88,7 +115,27 @@ public class Elevator {
             boxpos = topFloor;
             return;
         }
+
+        if (f % 1 == 0) {
+            synchronized (observers) {
+                for (Map.Entry<ElevatorObserver, Integer> observer : observers.entrySet()) {
+                    ElevatorObserver key = observer.getKey();
+                    Integer floor = observer.getValue();
+                    if (floor == f) {
+                        key.signalPosition(floor);
+                        removeObserver(key);
+                    }
+                }
+            }
+        }
+
         boxpos = f; //still here ?
+    }
+
+    public void removeObserver(ElevatorObserver observer) {
+        synchronized (observers) {
+            observers.remove(observer);
+        }
     }
 
     public int getNumber() {

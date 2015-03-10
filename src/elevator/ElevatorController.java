@@ -1,16 +1,11 @@
 package elevator;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The controller must accept actions events from the elevators (button
@@ -59,12 +54,13 @@ public class ElevatorController implements Runnable {
         }
     }
 
-    public void pressButton(int currentFloor) {
+    // TODO: ta hänsyn till flera knapptryckningar
+    public void pressButton(int currentFloor, int dir) {
         System.out.println("button pressed on floor " + currentFloor);
         //stream.println("m 2 1");
         //stream.println("s 2 2");
         //stream.flush();
- 
+
         Elevator elevator = null;
         try {
             startWaitTimer();
@@ -73,51 +69,60 @@ public class ElevatorController implements Runnable {
             if (allElevators.length == 1) {
                 elevator = allElevators[0];
             } else {
-                double distance = 0;
-                //while(elevator != null) {
+                double movingDistance = 0;
+                double emptyDistance = 0;
+                Elevator emptyElevator = null;
+                Elevator movingElevator = null;
+
                 for (int i = 0; i < allElevators.length; i++) {
                     Elevator tempElevator = allElevators[i];
 
                     //kolla avståndet 
-                    double tempDistance = (tempElevator.Getpos() - currentFloor);
-                    int tempDir = 0;
-                    if (tempDistance < 0) tempDir = -1;
-                    else if (tempDistance > 0) tempDir = 1;
+                    double tempDistance = (currentFloor - tempElevator.Getpos());
+                    if (tempDistance < 0) {
+                        tempDistance *= -1;
+                    }
 
-                    if (tempDistance < distance) {
-                        //ska åka åt samma håll som hissen åker
-                        if (tempElevator.Getdir() == tempDir) {
-
+                    //ska åka åt samma håll som hissen åker
+                    if (tempElevator.Getdir() == dir) {
+                        if (tempDistance < movingDistance || movingElevator == null) {
+                            movingElevator = tempElevator;
+                            movingDistance = tempDistance;
+                        } //ledig hiss 
+                    } else if (tempElevator.Getdir() == 0) {
+                        if (tempDistance < emptyDistance || emptyElevator == null) {
+                            emptyElevator = tempElevator;
+                            emptyDistance = tempDistance;
                         } //ledig hiss
-                        else if (tempElevator.Getdir() == 0) {
-
-                        } else {
-                            //ställ dig i kö/vänta
-                        }
-                        /*
-                        distance = tempDistance;
-                        elevator = tempElevator;
-                        */
                     }
                 }
-                //stream.println("m 2 1");
-                //stream.println("s 2 2");
-                //}
-            }
-            
-            //kolla om någon är i den
-            
-            //vänta tills den anländer, temp
-            /*while(el.Getpos() <= currentFloor) {
-                try {
-                    Thread.currentThread().sleep(200);
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(ElevatorController.class.getName()).log(Level.SEVERE, null, ex);
+                if (movingDistance < emptyDistance) {
+                    elevator = movingElevator;
+                } else {
+                    elevator = emptyElevator;
                 }
-            }*/
 
-            //stanna hissen
-            stream.println("m 2 0");
+                InnerObserver observer = new InnerObserver();
+                elevator.registerObserver(observer, currentFloor);
+                FloorButton button = new FloorButton(currentFloor, dir);
+                elevator.addPressedButton(button);
+
+                stream.println("m " + elevator.getNumber() + " " + dir);
+                try {
+                    observer.condition.wait();
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+                stream.println("m " + elevator.getNumber() + " 0");
+                elevator.removeButton(button);
+                stream.println("d " + elevator.getNumber() + " 1");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+                stream.println("d " + elevator.getNumber() + " 0");
+            }
         } finally {
             stopWaitTimer();
         }
@@ -159,6 +164,19 @@ public class ElevatorController implements Runnable {
     }
 
     private void stopWaitTimer() {
+
+    }
+
+    class InnerObserver implements ElevatorObserver {
+
+        Lock lock = new ReentrantLock();
+        Condition condition = lock.newCondition();
+
+        @Override
+        public void signalPosition(int floor) {
+            condition.signal();
+
+        }
 
     }
 
