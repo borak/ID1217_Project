@@ -61,26 +61,63 @@ public class ElevatorController implements Runnable {
 
     public void pressButton(int currentFloor) {
         System.out.println("button pressed on floor " + currentFloor);
-        stream.println("m 2 1");   
-        stream.flush();
-
-        this.currentFloor = currentFloor;
-        double distance = 0, tempDistance = 0;
-        Elevator el = elevator;
+        //stream.println("m 2 1");
+        //stream.println("s 2 2");
+        //stream.flush();
+ 
+        Elevator elevator = null;
         try {
             startWaitTimer();
 
-            for (int i = 0; i < allElevators.length; i++) {
-                Elevator tempEl = allElevators[i];
-                distance = (tempEl.Getpos() - currentFloor);
-                if (tempDistance < distance) {
-                    distance = tempDistance;
-                    el = tempEl;
-                }
-            }
-            //out.print("\nm " + el.getNumber() + " " + currentFloor);
-            //System.stream.println("m " + el.getNumber() + " " + currentFloor + " ");
+            //hämta närmaste hiss
+            if (allElevators.length == 1) {
+                elevator = allElevators[0];
+            } else {
+                double distance = 0;
+                //while(elevator != null) {
+                for (int i = 0; i < allElevators.length; i++) {
+                    Elevator tempElevator = allElevators[i];
 
+                    //kolla avståndet 
+                    double tempDistance = (tempElevator.Getpos() - currentFloor);
+                    int tempDir = 0;
+                    if (tempDistance < 0) tempDir = -1;
+                    else if (tempDistance > 0) tempDir = 1;
+
+                    if (tempDistance < distance) {
+                        //ska åka åt samma håll som hissen åker
+                        if (tempElevator.Getdir() == tempDir) {
+
+                        } //ledig hiss
+                        else if (tempElevator.Getdir() == 0) {
+
+                        } else {
+                            //ställ dig i kö/vänta
+                        }
+                        /*
+                        distance = tempDistance;
+                        elevator = tempElevator;
+                        */
+                    }
+                }
+                //stream.println("m 2 1");
+                //stream.println("s 2 2");
+                //}
+            }
+            
+            //kolla om någon är i den
+            
+            //vänta tills den anländer, temp
+            /*while(el.Getpos() <= currentFloor) {
+                try {
+                    Thread.currentThread().sleep(200);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(ElevatorController.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }*/
+
+            //stanna hissen
+            stream.println("m 2 0");
         } finally {
             stopWaitTimer();
         }
