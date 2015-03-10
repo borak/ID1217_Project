@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The controller must accept actions events from the elevators (button
@@ -69,12 +71,13 @@ public class ElevatorController implements Runnable {
             if (allElevators.length == 1) {
                 elevator = allElevators[0];
             } else {
-                double movingDistance = 0;
-                double emptyDistance = 0;
+                double movingDistance = Double.MAX_VALUE;
+                double emptyDistance = Double.MIN_VALUE;
+                // elevator = allElevators[0];
                 Elevator emptyElevator = null;
                 Elevator movingElevator = null;
 
-                for (int i = 0; i < allElevators.length; i++) {
+                for (int i = 0; i < allElevators.length - 1; i++) {
                     Elevator tempElevator = allElevators[i];
 
                     //kolla avståndet 
@@ -96,37 +99,50 @@ public class ElevatorController implements Runnable {
                         } //ledig hiss
                     }
                 }
+
                 if (movingDistance < emptyDistance) {
                     elevator = movingElevator;
                 } else {
                     elevator = emptyElevator;
                 }
 
-                InnerObserver observer = new InnerObserver();
-                elevator.registerObserver(observer, currentFloor);
                 FloorButton button = new FloorButton(currentFloor, dir);
-                elevator.addPressedButton(button);
+                InnerObserver observer = new InnerObserver(elevator, button);
+                elevator.registerObserver(observer);
 
-                stream.println("m " + elevator.getNumber() + " " + dir);
-                try {
-                    observer.condition.wait();
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                }
-                stream.println("m " + elevator.getNumber() + " 0");
-                elevator.removeButton(button);
-                stream.println("d " + elevator.getNumber() + " 1");
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                }
-                stream.println("d " + elevator.getNumber() + " 0");
             }
-        } finally {
-            stopWaitTimer();
+        } catch (Exception e) {
+            e.printStackTrace();
+            //stopWaitTimer();
         }
 
+    }
+
+    public void handleButtonQueue() {
+        FloorButton button = elevator.getNextObserver();
+        while (button != null) {
+
+            stream.println("m " + elevator.getNumber() + " " + button.getDir());
+
+            elevator.addPressedButton(button);
+
+            stream.println("m " + elevator.getNumber() + " 0");
+            stream.println("d " + elevator.getNumber() + " 1");
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+            stream.println("d " + elevator.getNumber() + " -1");
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+
+            button = elevator.getNextObserver();
+        }
     }
 
     public void pressPanel(int elevatorIndex, int floor) {
@@ -155,7 +171,8 @@ public class ElevatorController implements Runnable {
 
     }
 
-    public void stopTimer() {
+    public
+            void stopTimer() {
 
     }
 
@@ -171,13 +188,61 @@ public class ElevatorController implements Runnable {
 
         Lock lock = new ReentrantLock();
         Condition condition = lock.newCondition();
+        Elevator elevator;
+        FloorButton button;
+
+        InnerObserver(Elevator elevator, FloorButton button) {
+            this.elevator = elevator;
+            this.button = button;
+        }
 
         @Override
         public void signalPosition(int floor) {
-            condition.signal();
+            synchronized (condition) {
+                condition.signal();
+            }
+        }
+
+        void waitPosition(FloorButton button) {
+            int floor = button.getFloor();
+
+            if (button.getDir() > 0) {
+                while (elevator.Getpos() >= floor) {
+                    synchronized (condition) {
+                        try {
+                            condition.wait();
+                        } catch (InterruptedException ex) {
+                            Logger.getLogger(ElevatorController.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                    // TODO: skriv till ström s
+                }
+            } else {
+                while (elevator.Getpos() <= floor) {
+                    synchronized (condition) {
+                        try {
+                            condition.wait();
+                        } catch (InterruptedException ex) {
+                            Logger.getLogger(ElevatorController.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            }
+            elevator.removeButton(button);
 
         }
 
+        public FloorButton getButton() {
+            return button;
+        }
+        
+        public int getFloor() {
+            return button.getFloor();
+        }
+        
+        public int getDir() {
+            return button.getDir();
+        }
+        
     }
-
 }

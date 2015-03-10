@@ -43,36 +43,38 @@ public class ElevatorEvents extends WindowAdapter implements ActionListener {
      * pressed, <i>f</i> is a floor number assigned with the button.
      */
     public void actionPerformed(ActionEvent e) {
-        out.println(e.getActionCommand());
-
-        String[] tokens = new String[3];
-        StringTokenizer tokenizer = new StringTokenizer(e.getActionCommand());
-        if (tokenizer.countTokens() < 1) {
-            return;
-        }
-
-        tokens[0] = tokenizer.nextToken();
-
-        if (tokens[0].equalsIgnoreCase("p") || tokens[0].equalsIgnoreCase("panel")) {
-            if (tokenizer.countTokens() < 3) {
-                return;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                out.println(e.getActionCommand());
+                String[] tokens = new String[3];
+                StringTokenizer tokenizer = new StringTokenizer(e.getActionCommand());
+                if (tokenizer.countTokens() < 1) {
+                    return;
+                }
+                tokens[0] = tokenizer.nextToken();
+                if (tokens[0].equalsIgnoreCase("p") || tokens[0].equalsIgnoreCase("panel")) {
+                    if (tokenizer.countTokens() < 3) {
+                        return;
+                    }
+                    try {
+                        elevatorController.pressPanel(Integer.parseInt(tokenizer.nextToken()), Integer.parseInt(tokenizer.nextToken()));
+                    } catch (Exception ex) {
+                        System.err.println("Illegal command: " + e.getActionCommand());
+                    }
+                } else if (tokens[0].equalsIgnoreCase("b") || tokens[0].equalsIgnoreCase("button")) {
+                    if (tokenizer.countTokens() < 2) {
+                        //return;
+                    }
+                    try {
+                        elevatorController.pressButton(Integer.parseInt(tokenizer.nextToken()), Integer.parseInt(tokenizer.nextToken()));
+                    } catch (Exception ex) {
+                        System.err.println("Illegal command: " + e.getActionCommand());
+                    }
+                }
             }
-            try {
-                elevatorController.pressPanel(Integer.parseInt(tokenizer.nextToken()), Integer.parseInt(tokenizer.nextToken()));
-            } catch (Exception ex) {
-                System.err.println("Illegal command: " + e.getActionCommand());
-            }
 
-        } else if (tokens[0].equalsIgnoreCase("b") || tokens[0].equalsIgnoreCase("button")) {
-            if (tokenizer.countTokens() < 3) {
-                return;
-            }
-            try {
-                elevatorController.pressButton(Integer.parseInt(tokenizer.nextToken()), Integer.parseInt(tokenizer.nextToken()));
-            } catch (Exception ex) {
-                System.err.println("Illegal command: " + e.getActionCommand());
-            }
-        }
+        }).start();
     }
 
     /**

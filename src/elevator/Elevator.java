@@ -2,8 +2,10 @@ package elevator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.swing.JComponent;
@@ -62,8 +64,7 @@ public class Elevator {
     private JComponent window;
     private JComponent scale;
 
-    private Map<ElevatorObserver, Integer> observers = new HashMap();
-    private ArrayList<FloorButton> buttonsPressed = new ArrayList();
+    private Queue<ElevatorObserver> observers = new LinkedList();
 
     /**
      * Constructs an instance of <code>Elevator</code> that represents the
@@ -81,21 +82,15 @@ public class Elevator {
         this.number = number;
     }
 
-    public void registerObserver(ElevatorObserver observer, int floor) {
+    public void registerObserver(ElevatorObserver observer) {
         synchronized (observers) {
-            observers.put(observer, floor);
+            observers.add(observer);
         }
     }
 
-    public void addPressedButton(FloorButton button) {
-        synchronized (buttonsPressed) {
-            buttonsPressed.add(button);
-        }
-    }
-
-    public void removeButton(FloorButton button) {
-        synchronized (buttonsPressed) {
-            buttonsPressed.remove(button);
+    public ElevatorObserver getNextObserver() {
+        synchronized (observers) {
+            return observers.peek();
         }
     }
 
@@ -118,13 +113,8 @@ public class Elevator {
 
         if (f % 1 == 0) {
             synchronized (observers) {
-                for (Map.Entry<ElevatorObserver, Integer> observer : observers.entrySet()) {
-                    ElevatorObserver key = observer.getKey();
-                    Integer floor = observer.getValue();
-                    if (floor == f) {
-                        key.signalPosition(floor);
-                        removeObserver(key);
-                    }
+                for (ElevatorObserver observer : observers) {
+                    observer.signalPosition();
                 }
             }
         }

@@ -6,8 +6,8 @@ package elevator;
  */
 public class FloorButton {
     
-    int floor;
-    int dir;
+    private int floor;
+    private int dir;
 
     public FloorButton(int floor, int dir) {
         this.floor = floor;
