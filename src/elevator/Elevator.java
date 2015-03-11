@@ -65,6 +65,7 @@ public class Elevator {
     private JComponent scale;
 
     private Queue<ElevatorObserver> observers = new LinkedList();
+    private ElevatorObserver destObserver = null; 
 
     /**
      * Constructs an instance of <code>Elevator</code> that represents the
@@ -85,14 +86,30 @@ public class Elevator {
     public void registerObserver(ElevatorObserver observer) {
         synchronized (observers) {
             observers.add(observer);
+            if(destObserver == null) {
+                destObserver = observer;
+            } 
         }
     }
 
     public ElevatorObserver getNextObserver() {
         synchronized (observers) {
+            if(destObserver != null) {
+                return destObserver;
+            }
             return observers.peek();
         }
     }
+
+    public ElevatorObserver getDestObserver() {
+        return destObserver;
+    }
+
+    public void setDestObserver(ElevatorObserver destObserver) {
+        this.destObserver = destObserver;
+    }
+    
+    
 
     /**
      * Sets position of the elevator cabin to the specified double value.
@@ -124,6 +141,7 @@ public class Elevator {
     public void removeObserver(ElevatorObserver observer) {
         synchronized (observers) {
             observers.remove(observer);
+            destObserver = null;
         }
     }
 

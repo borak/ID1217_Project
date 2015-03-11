@@ -8,7 +8,7 @@ interface ElevatorObserver {
 
     void  signalPosition(int floor);
 
-    FloorButton getButton();
+    ElevatorButton getButton();
 
     void waitPosition();
 

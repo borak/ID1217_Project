@@ -4,12 +4,12 @@ package elevator;
  *
  * @author Gabriel
  */
-public class FloorButton {
+public class ElevatorButton {
     
     private int floor;
     private int dir;
 
-    public FloorButton(int floor, int dir) {
+    public ElevatorButton(int floor, int dir) {
         this.floor = floor;
         this.dir = dir;
     }

@@ -92,9 +92,10 @@ public class ElevatorController implements Runnable {
                     elevator = emptyElevator;
                 }
 
-                FloorButton button = new FloorButton(currentFloor, dir);
+                ElevatorButton button = new ElevatorButton(currentFloor, dir);
                 InnerObserver observer = new InnerObserver(elevator, button);
                 elevator.registerObserver(observer);
+
                 handleButtonQueue(elevator);
             }
         } finally {
@@ -124,23 +125,10 @@ public class ElevatorController implements Runnable {
 
             elevator.registerObserver(observer);
             observer.waitPosition();
-
-            stream.println("m " + elevator.getNumber() + " 0");
-            stream.println("d " + elevator.getNumber() + " 1");
             elevator.removeObserver(observer);
 
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException ex) {
-                ex.printStackTrace();
-            }
-            stream.println("d " + elevator.getNumber() + " -1");
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ex) {
-                ex.printStackTrace();
-            }
+            stream.println("m " + elevator.getNumber() + " 0");
+            simulateDoors(elevator);
 
             observer = elevator.getNextObserver();
         }
@@ -149,19 +137,57 @@ public class ElevatorController implements Runnable {
         }
     }
 
+    private void simulateDoors(Elevator elevator) {
+        stream.println("d " + elevator.getNumber() + " 1");
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+        stream.println("d " + elevator.getNumber() + " -1");
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * Regler: hiss kan bara ändra riktning när den är tom. Hämtar bara upp folk
+     * som ska åka i hissens riktning kösystem, prioriterar alltid max våning
+     *
+     */
     public void pressPanel(int elevatorIndex, int floor) {
         startTimer();
         try {
-            Elevator elevator = allElevators[elevatorIndex];
-            double pos = elevator.Getpos();
-            //if((int)pos != pos) throw Exception("moving"); 
-            if (pos == floor) {
-                return;
-            } else if (pos > floor) {
-                elevator.Setdir(Elevators.DOWN);
-            } else /* if(pos < floor) */ {
-                elevator.Setdir(Elevators.UP);
+            Elevator elevator = allElevators[elevatorIndex - 1];
+            int dir = (int) (floor - elevator.Getpos());
+            if (dir >= 0) {
+                dir = 1;
+            } else {
+                dir = -1;
             }
+            ElevatorButton button = new ElevatorButton(floor, dir);
+            InnerObserver observer = new InnerObserver(elevator, button);
+            elevator.registerObserver(observer);
+
+            if (elevator.getDestObserver() == null) {
+                elevator.setDestObserver(observer);
+            } else {
+                ElevatorButton destButton = elevator.getDestObserver().getButton();
+
+                if (dir >= 0) {
+                    if (floor > destButton.getFloor()) {
+                        elevator.setDestObserver(observer);
+                    }
+                } else {
+                    if (floor < destButton.getFloor()) {
+                        elevator.setDestObserver(observer);
+                    }
+                }
+            }
+            handleButtonQueue(elevator);
+
         } finally {
             stopTimer();
         }
@@ -192,10 +218,10 @@ public class ElevatorController implements Runnable {
         Lock lock = new ReentrantLock();
         Condition condition = lock.newCondition();
         Elevator elevator;
-        FloorButton button;
+        ElevatorButton button;
         Semaphore semaphore = new Semaphore(1);
 
-        InnerObserver(Elevator elevator, FloorButton button) {
+        InnerObserver(Elevator elevator, ElevatorButton button) {
             this.elevator = elevator;
             this.button = button;
         }
@@ -221,7 +247,7 @@ public class ElevatorController implements Runnable {
             elevator.removeObserver(this);
         }
 
-        public FloorButton getButton() {
+        public ElevatorButton getButton() {
             return button;
         }
 
