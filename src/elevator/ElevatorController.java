@@ -171,21 +171,6 @@ public class ElevatorController implements Runnable {
             InnerObserver observer = new InnerObserver(elevator, button);
             elevator.registerObserver(observer);
 
-            if (elevator.getDestObserver() == null) {
-                elevator.setDestObserver(observer);
-            } else {
-                ElevatorButton destButton = elevator.getDestObserver().getButton();
-
-                if (dir >= 0) {
-                    if (floor > destButton.getFloor()) {
-                        elevator.setDestObserver(observer);
-                    }
-                } else {
-                    if (floor < destButton.getFloor()) {
-                        elevator.setDestObserver(observer);
-                    }
-                }
-            }
             handleButtonQueue(elevator);
 
         } finally {
@@ -259,5 +244,14 @@ public class ElevatorController implements Runnable {
             return button.getDir();
         }
 
+        @Override
+        public int compareTo(ElevatorObserver t) {
+            if (this.button.getFloor() > t.getButton().getFloor()) {
+                return 1;
+            } else if (this.button.getFloor() < t.getButton().getFloor()) {
+                return -1;
+            }
+            return 0;
+        }
     }
 }

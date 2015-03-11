@@ -4,9 +4,9 @@ package elevator;
  *
  * @author Gabriel
  */
-interface ElevatorObserver {
+interface ElevatorObserver extends Comparable<ElevatorObserver> {
 
-    void  signalPosition(int floor);
+    void signalPosition(int floor);
 
     ElevatorButton getButton();
 

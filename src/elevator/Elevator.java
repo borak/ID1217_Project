@@ -1,6 +1,9 @@
 package elevator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -64,8 +67,7 @@ public class Elevator {
     private JComponent window;
     private JComponent scale;
 
-    private Queue<ElevatorObserver> observers = new LinkedList();
-    private ElevatorObserver destObserver = null; 
+    private ArrayList<ElevatorObserver> observers = new ArrayList();
 
     /**
      * Constructs an instance of <code>Elevator</code> that represents the
@@ -86,30 +88,31 @@ public class Elevator {
     public void registerObserver(ElevatorObserver observer) {
         synchronized (observers) {
             observers.add(observer);
-            if(destObserver == null) {
-                destObserver = observer;
-            } 
+
+            Collections.sort(observers, new Comparator<ElevatorObserver>() {
+                public int compare(ElevatorObserver firstObserver, ElevatorObserver nextObserver) {
+                    return firstObserver.compareTo(nextObserver);
+                }
+            });
         }
     }
+    //    private void sortObservers() {
+    //        for (int i = 0; i < observers.size(); i++) {
+    //            int num = observers.get(i).getButton().getFloor();
+    //            for (int j = 0; j < observers.size(); j++) {
+    //                int num2 = observers.get(j).getButton().getFloor();
+    //                if (num2 > num) {
+    //
+    //                }
+    //            }
+    //       }
+    //  }
 
     public ElevatorObserver getNextObserver() {
         synchronized (observers) {
-            if(destObserver != null) {
-                return destObserver;
-            }
             return observers.peek();
         }
     }
-
-    public ElevatorObserver getDestObserver() {
-        return destObserver;
-    }
-
-    public void setDestObserver(ElevatorObserver destObserver) {
-        this.destObserver = destObserver;
-    }
-    
-    
 
     /**
      * Sets position of the elevator cabin to the specified double value.
