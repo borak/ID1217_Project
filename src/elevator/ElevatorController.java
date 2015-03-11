@@ -3,6 +3,7 @@ package elevator;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -22,10 +23,6 @@ import java.util.logging.Logger;
  */
 public class ElevatorController implements Runnable {
 
-    private Elevator elevator;
-    //public static final int UP = 1, DOWN = -1, STOPED = 0;
-    private int currentFloor, panel, el, velocity;
-    private ArrayList<Integer> semList;
     private ArrayList activeElevators = new ArrayList();
     private Elevator[] allElevators;
     private Socket socket;
@@ -35,7 +32,6 @@ public class ElevatorController implements Runnable {
         this.allElevators = elevators.allElevators;
     }
 
-    //TODO: fixa sockets i ElevatorIO ?
     public void createSocket(String hostName, int port) {
         try {
             System.out.println("Client trying to connect to: " + hostName + " " + port);
@@ -56,50 +52,40 @@ public class ElevatorController implements Runnable {
         }
     }
 
-    // TODO: ta hänsyn till flera knapptryckningar
     public void pressButton(int currentFloor, int dir) {
-        System.out.println("button pressed on floor " + currentFloor);
-        //stream.println("m 2 1");
-        //stream.println("s 2 2");
-        //stream.flush();
+        System.out.println("Button pressed on floor " + currentFloor);
 
         Elevator elevator = null;
         try {
             startWaitTimer();
 
-            //hämta närmaste hiss
             if (allElevators.length == 1) {
                 elevator = allElevators[0];
             } else {
                 double movingDistance = Double.MAX_VALUE;
                 double emptyDistance = Double.MIN_VALUE;
-                // elevator = allElevators[0];
                 Elevator emptyElevator = null;
                 Elevator movingElevator = null;
 
                 for (int i = 0; i < allElevators.length - 1; i++) {
                     Elevator tempElevator = allElevators[i];
 
-                    //kolla avståndet 
                     double tempDistance = (currentFloor - tempElevator.Getpos());
                     if (tempDistance < 0) {
                         tempDistance *= -1;
                     }
-
-                    //ska åka åt samma håll som hissen åker
                     if (tempElevator.Getdir() == dir) {
                         if (tempDistance < movingDistance || movingElevator == null) {
                             movingElevator = tempElevator;
                             movingDistance = tempDistance;
-                        } //ledig hiss 
+                        }
                     } else if (tempElevator.Getdir() == 0) {
                         if (tempDistance < emptyDistance || emptyElevator == null) {
                             emptyElevator = tempElevator;
                             emptyDistance = tempDistance;
-                        } //ledig hiss
+                        }
                     }
                 }
-
                 if (movingDistance < emptyDistance) {
                     elevator = movingElevator;
                 } else {
@@ -110,7 +96,6 @@ public class ElevatorController implements Runnable {
                 InnerObserver observer = new InnerObserver(elevator, button);
                 elevator.registerObserver(observer);
                 handleButtonQueue(elevator);
-
             }
         } finally {
             stopWaitTimer();
@@ -128,17 +113,22 @@ public class ElevatorController implements Runnable {
 
         ElevatorObserver observer = elevator.getNextObserver();
         while (observer != null) {
-            System.out.println("m " + elevator.getNumber() + " " + observer.getButton().getDir());
-            stream.println("m " + elevator.getNumber() + " " + observer.getButton().getDir());
+            int dir = 0;
+
+            if (elevator.Getpos() <= observer.getButton().getFloor()) {
+                dir = 1;
+            } else if (elevator.Getpos() >= observer.getButton().getFloor()) {
+                dir = -1;
+            }
+            stream.println("m " + elevator.getNumber() + " " + dir);
 
             elevator.registerObserver(observer);
-
-            // stream.println("m " + elevator.getNumber() + " 0");
             observer.waitPosition();
 
             stream.println("m " + elevator.getNumber() + " 0");
             stream.println("d " + elevator.getNumber() + " 1");
             elevator.removeObserver(observer);
+
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException ex) {
@@ -203,6 +193,7 @@ public class ElevatorController implements Runnable {
         Condition condition = lock.newCondition();
         Elevator elevator;
         FloorButton button;
+        Semaphore semaphore = new Semaphore(1);
 
         InnerObserver(Elevator elevator, FloorButton button) {
             this.elevator = elevator;
@@ -211,57 +202,23 @@ public class ElevatorController implements Runnable {
 
         @Override
         public void signalPosition(int floor) {
-            synchronized (condition) {
-                try {
-                    lock.lock();
-                    System.out.println("trying to signal..");
-                    condition.signal();
-                    condition.signalAll();
-                    System.out.println(" signal success?");
-                } finally {
-                    lock.unlock();
-                }
-            }
+            semaphore.release();
         }
 
         @Override
         public void waitPosition() {
             int floor = button.getFloor();
-            double pos;
 
-            if (button.getDir() > 0) {
-                System.out.println("button dir  = " + button.getDir() + " elevator pos  = " + elevator.Getpos() + " floor = " + floor);
-//                synchronized (elevator.motorLock) {
-//                    pos = elevator.Getpos();
-//                }
-                while (elevator.Getpos() <= floor) {
-                    System.out.println("loopy 1");
-                    synchronized (condition) {
-                        //   try {
-                        //condition.wait();
-                        System.out.println(" conditon SIGNALED!");
-//                        } catch (InterruptedException ex) {
-//                            Logger.getLogger(ElevatorController.class.getName()).log(Level.SEVERE, null, ex);
-//                        }
-                    }
-//                    synchronized (elevator.motorLock) {
-//                        pos = elevator.Getpos();
-//                    }
-                    // TODO: skriv till ström s
+            if (floor >= elevator.Getpos() - 0.001) {
+                while (elevator.Getpos() + 0.001 <= floor) {
+                    semaphore.acquireUninterruptibly();
                 }
             } else {
-                while (elevator.Getpos() >= floor) {
-                    System.out.println("loopy 2");
-                    //  synchronized (condition) {
-//                        try {
-//                          //  condition.wait();
-//                        } catch (InterruptedException ex) {
-//                            Logger.getLogger(ElevatorController.class.getName()).log(Level.SEVERE, null, ex);
-//                        }
+                while (elevator.Getpos() - 0.001 >= floor) {
+                    semaphore.acquireUninterruptibly();
                 }
             }
             elevator.removeObserver(this);
-
         }
 
         public FloorButton getButton() {
