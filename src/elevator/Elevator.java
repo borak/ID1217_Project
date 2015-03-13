@@ -96,33 +96,63 @@ public class Elevator {
                     return firstObserver.compareTo(nextObserver);
                 }
             });
+
+            if (currentObserver == null) {
+                currentObserver = observer;
+                return;
+            }
+            int currentDir = currentObserver.getButton().getDir();
+            int currentFloor = currentObserver.getButton().getFloor();
+            if ((currentDir == observer.getButton().getDir())
+                    && ((currentDir == -1) && (currentFloor < observer.getButton().getFloor())
+                    || ((currentDir == 1) && (currentFloor > observer.getButton().getFloor())))) {
+                ElevatorObserver tempObserver = currentObserver;
+                currentObserver = observer;
+                System.out.println("tempOb = " + tempObserver.getButton().getFloor());
+                System.out.println("currentOb = " + currentObserver.getButton().getFloor());
+                tempObserver.interruptWait();
+            }
         }
     }
-    //    private void sortObservers() {
-    //        for (int i = 0; i < observers.size(); i++) {
-    //            int num = observers.get(i).getButton().getFloor();
-    //            for (int j = 0; j < observers.size(); j++) {
-    //                int num2 = observers.get(j).getButton().getFloor();
-    //                if (num2 > num) {
-    //
-    //                }
-    //            }
-    //       }
-    //  }
+//    private void sortObservers() {
+//        for (int i = 0; i < observers.size(); i++) {
+//            int num = observers.get(i).getButton().getFloor();
+//            for (int j = 0; j < observers.size(); j++) {
+//                int num2 = observers.get(j).getButton().getFloor();
+//                if (num2 > num) {
+//
+//                }
+//            }
+//       }
+//  }
+
+    public ElevatorObserver getObserver() {
+        return currentObserver;
+    }
 
     public ElevatorObserver getNextUpObserver() {
         ElevatorObserver tempObserver = null;
 
         synchronized (observers) {
+            if (currentObserver != null && observers.contains(currentObserver)) {
+                return currentObserver;
+            }
+
             for (ElevatorObserver observer : observers) {
                 int tempFloor = observer.getButton().getFloor();
-                if (currentObserver.getButton().getFloor() <= tempFloor) {
+                if (currentObserver != null && currentObserver.getButton().getFloor() <= tempFloor) {
                     break;
                 }
                 tempObserver = observer;
             }
         }
 
+        if (currentObserver != null && tempObserver != null) {
+            System.out.println("UP: currentOb = " + currentObserver.getButton().getFloor());
+            System.out.println("UP: tempObserver = " + tempObserver.getButton().getFloor());
+        }
+
+        currentObserver = tempObserver;
         return tempObserver;
     }
 
@@ -130,15 +160,24 @@ public class Elevator {
         ElevatorObserver tempObserver = null;
 
         synchronized (observers) {
+            if (currentObserver != null && observers.contains(currentObserver)) {
+                return currentObserver;
+            }
+
             for (ElevatorObserver observer : observers) {
                 int tempFloor = observer.getButton().getFloor();
-                if (currentObserver.getButton().getFloor() >= tempFloor) {
+                if (currentObserver != null && currentObserver.getButton().getFloor() >= tempFloor) {
                     break;
                 }
                 tempObserver = observer;
             }
         }
+        if (currentObserver != null && tempObserver != null) {
+            System.out.println("DOWN: currentOb = " + currentObserver.getButton().getFloor());
+            System.out.println("DOWN: tempObserver = " + tempObserver.getButton().getFloor());
+        }
 
+        currentObserver = tempObserver;
         return tempObserver;
     }
 
@@ -160,7 +199,7 @@ public class Elevator {
         }
 
         if (f % 1 < 0.001 || f % 1 > 0.999) {
-            System.out.println("f = " + f);
+            // System.out.println("f = " + f);
             for (ElevatorObserver observer : observers) {
                 observer.signalPosition((int) f);
             }

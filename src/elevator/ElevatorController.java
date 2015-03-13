@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -27,9 +28,11 @@ public class ElevatorController implements Runnable {
     private Elevator[] allElevators;
     private Socket socket;
     private PrintWriter stream;
+    private AtomicBoolean shouldStop = new AtomicBoolean();
 
     public ElevatorController(Elevators elevators) {
         this.allElevators = elevators.allElevators;
+        shouldStop.getAndSet(false);
     }
 
     public void createSocket(String hostName, int port) {
@@ -127,10 +130,11 @@ public class ElevatorController implements Runnable {
             stream.println("m " + elevator.getNumber() + " " + dir);
 
             observer.waitPosition();
-            elevator.removeObserver(observer);
-
-            stream.println("m " + elevator.getNumber() + " 0");
-            simulateDoors(elevator);
+            // elevator.removeObserver(observer);
+            if (shouldStop.get()) {
+                shouldStop.getAndSet(false);
+                stopElevator(elevator);
+            }
 
             if (dir == 1) {
                 observer = elevator.getNextUpObserver();
@@ -143,6 +147,7 @@ public class ElevatorController implements Runnable {
                     observer = elevator.getNextUpObserver();
                 }
             }
+//            System.out.println("observer = " + observer.getButton().getFloor());
 
         }
         synchronized (activeElevators) {
@@ -191,6 +196,13 @@ public class ElevatorController implements Runnable {
         }
     }
 
+    public void stopElevator(Elevator elevator) {
+        System.out.println("stopElevator()");
+        stream.println("m " + elevator.getNumber() + " 0");
+        simulateDoors(elevator);
+
+    }
+
     public void setVelocity(double velocity) {
 
     }
@@ -218,6 +230,7 @@ public class ElevatorController implements Runnable {
         Elevator elevator;
         ElevatorButton button;
         Semaphore semaphore = new Semaphore(1);
+        Thread waitingThread = null;
 
         InnerObserver(Elevator elevator, ElevatorButton button) {
             this.elevator = elevator;
@@ -227,22 +240,45 @@ public class ElevatorController implements Runnable {
         @Override
         public void signalPosition(int floor) {
             semaphore.release();
+            if (button.getFloor() == floor) {
+                // stopElevator(elevator);
+                shouldStop.getAndSet(true);
+            }
         }
 
         @Override
         public void waitPosition() {
+//            new Thread(new Runnable() {
             int floor = button.getFloor();
+//
+//                @Override
+//                public void run() {
+            System.out.println("waiting on floor ..." + floor);
 
             if (floor >= elevator.Getpos() - 0.001) {
                 while (elevator.Getpos() + 0.001 <= floor) {
-                    semaphore.acquireUninterruptibly();
+                    // skriv hisstatusen till strömmen
+                    try {
+                        waitingThread = Thread.currentThread();
+                        semaphore.acquire();
+                    } catch (InterruptedException ex) {
+                        return;
+                    }
                 }
             } else {
                 while (elevator.Getpos() - 0.001 >= floor) {
-                    semaphore.acquireUninterruptibly();
+                    try {
+                        waitingThread = Thread.currentThread();
+                        semaphore.acquire();
+                    } catch (InterruptedException ex) {
+                        return;
+                    }
                 }
             }
-            elevator.removeObserver(this);
+            waitingThread = null;
+            elevator.removeObserver(InnerObserver.this);
+//                }
+//            }).start();
         }
 
         public ElevatorButton getButton() {
@@ -265,6 +301,14 @@ public class ElevatorController implements Runnable {
                 return -1;
             }
             return 0;
+        }
+
+        @Override
+        public void interruptWait() {
+            if (waitingThread != null) {
+                System.out.println("interrupted thread!");
+                waitingThread.interrupt();
+            }
         }
     }
 }

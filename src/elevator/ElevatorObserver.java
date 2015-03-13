@@ -11,5 +11,7 @@ interface ElevatorObserver extends Comparable<ElevatorObserver> {
     ElevatorButton getButton();
 
     void waitPosition();
+    
+    void interruptWait();
 
 }
