@@ -64,6 +64,8 @@ public class Elevator {
     private int topFloor = 0;
     private int number = 0;
 
+    private ElevatorObserver currentObserver;
+
     private JComponent window;
     private JComponent scale;
 
@@ -108,10 +110,36 @@ public class Elevator {
     //       }
     //  }
 
-    public ElevatorObserver getNextObserver() {
+    public ElevatorObserver getNextUpObserver() {
+        ElevatorObserver tempObserver = null;
+
         synchronized (observers) {
-            return observers.peek();
+            for (ElevatorObserver observer : observers) {
+                int tempFloor = observer.getButton().getFloor();
+                if (currentObserver.getButton().getFloor() <= tempFloor) {
+                    break;
+                }
+                tempObserver = observer;
+            }
         }
+
+        return tempObserver;
+    }
+
+    public ElevatorObserver getNextDownObserver() {
+        ElevatorObserver tempObserver = null;
+
+        synchronized (observers) {
+            for (ElevatorObserver observer : observers) {
+                int tempFloor = observer.getButton().getFloor();
+                if (currentObserver.getButton().getFloor() >= tempFloor) {
+                    break;
+                }
+                tempObserver = observer;
+            }
+        }
+
+        return tempObserver;
     }
 
     /**
@@ -143,8 +171,20 @@ public class Elevator {
 
     public void removeObserver(ElevatorObserver observer) {
         synchronized (observers) {
+//            int index = 0;
+//            if (currentObserver.getButton().getDir() == 1) {
+//                index = observers.indexOf(observer) + 1;
+//            } else if (currentObserver.getButton().getDir() == -1) {
+//                index = observers.indexOf(observer) - 1;
+//            }
             observers.remove(observer);
-            destObserver = null;
+
+//            if (observers.size() < index) {
+//                index = observers.size();
+//            } else if (index < 0) {
+//                index = 0;
+//            }
+//            currentObserver = observers.get(index);
         }
     }
 

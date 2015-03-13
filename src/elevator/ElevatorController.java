@@ -112,7 +112,10 @@ public class ElevatorController implements Runnable {
             activeElevators.add(elevator);
         }
 
-        ElevatorObserver observer = elevator.getNextObserver();
+        ElevatorObserver observer = elevator.getNextUpObserver();
+        if (observer == null) {
+            observer = elevator.getNextDownObserver();
+        }
         while (observer != null) {
             int dir = 0;
 
@@ -123,14 +126,24 @@ public class ElevatorController implements Runnable {
             }
             stream.println("m " + elevator.getNumber() + " " + dir);
 
-            elevator.registerObserver(observer);
             observer.waitPosition();
             elevator.removeObserver(observer);
 
             stream.println("m " + elevator.getNumber() + " 0");
             simulateDoors(elevator);
 
-            observer = elevator.getNextObserver();
+            if (dir == 1) {
+                observer = elevator.getNextUpObserver();
+                if (observer == null) {
+                    observer = elevator.getNextDownObserver();
+                }
+            } else {
+                observer = elevator.getNextDownObserver();
+                if (observer == null) {
+                    observer = elevator.getNextUpObserver();
+                }
+            }
+
         }
         synchronized (activeElevators) {
             activeElevators.remove(elevator);
