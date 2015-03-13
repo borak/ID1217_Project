@@ -10,6 +10,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.SwingConstants;
 
 /**
  * The controller must accept actions events from the elevators (button
@@ -132,22 +133,23 @@ public class ElevatorController implements Runnable {
             observer.waitPosition();
             // elevator.removeObserver(observer);
             if (shouldStop.get()) {
-                shouldStop.getAndSet(false);
+                shouldStop.set(false);
                 stopElevator(elevator);
             }
 
+            // todo DOWN FUNKAR EJ 
             if (dir == 1) {
-                observer = elevator.getNextUpObserver();
-                if (observer == null) {
-                    observer = elevator.getNextDownObserver();
-                }
-            } else {
-                observer = elevator.getNextDownObserver();
-                if (observer == null) {
-                    observer = elevator.getNextUpObserver();
-                }
+                observer = elevator.getNextUPObserver();
+//                if (observer == null) {
+//                    observer = elevator.getNextDownObserver();
+//                }
+            } else if (dir == -1) {
+                observer = elevator.getNextDOWNObserver();
+//                if (observer == null) {
+//                    observer = elevator.getNextUpObserver();
+//                }
+                System.out.println("OBSERVER OHW = " + observer.getButton().getFloor());
             }
-//            System.out.println("observer = " + observer.getButton().getFloor());
 
         }
         synchronized (activeElevators) {
@@ -156,6 +158,7 @@ public class ElevatorController implements Runnable {
     }
 
     private void simulateDoors(Elevator elevator) {
+        System.out.println("simulatedoors for " + elevator.getNumber());
         stream.println("d " + elevator.getNumber() + " 1");
         try {
             Thread.sleep(3000);
@@ -168,6 +171,7 @@ public class ElevatorController implements Runnable {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
+        System.out.println("done simulating ");
     }
 
     /**
@@ -197,7 +201,7 @@ public class ElevatorController implements Runnable {
     }
 
     public void stopElevator(Elevator elevator) {
-        System.out.println("stopElevator()");
+        System.out.println("stopElevator for " + elevator.getNumber());
         stream.println("m " + elevator.getNumber() + " 0");
         simulateDoors(elevator);
 
@@ -239,11 +243,11 @@ public class ElevatorController implements Runnable {
 
         @Override
         public void signalPosition(int floor) {
-            semaphore.release();
             if (button.getFloor() == floor) {
                 // stopElevator(elevator);
-                shouldStop.getAndSet(true);
+                shouldStop.set(true);
             }
+            semaphore.release();
         }
 
         @Override
@@ -254,23 +258,24 @@ public class ElevatorController implements Runnable {
 //                @Override
 //                public void run() {
             System.out.println("waiting on floor ..." + floor);
+            waitingThread = Thread.currentThread();
 
             if (floor >= elevator.Getpos() - 0.001) {
                 while (elevator.Getpos() + 0.001 <= floor) {
                     // skriv hisstatusen till strömmen
                     try {
-                        waitingThread = Thread.currentThread();
                         semaphore.acquire();
                     } catch (InterruptedException ex) {
+                        System.out.println(this.getFloor() + " INTERRUPT!");
                         return;
                     }
                 }
             } else {
                 while (elevator.Getpos() - 0.001 >= floor) {
                     try {
-                        waitingThread = Thread.currentThread();
                         semaphore.acquire();
                     } catch (InterruptedException ex) {
+                        System.out.println(this.getFloor() + " INTERRUPT!");
                         return;
                     }
                 }

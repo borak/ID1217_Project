@@ -126,7 +126,7 @@ public class Elevator {
 //       }
 //  }
 
-    public ElevatorObserver getObserver() {
+    public ElevatorObserver getCurrentObserver() {
         return currentObserver;
     }
 
@@ -140,6 +140,8 @@ public class Elevator {
 
             for (ElevatorObserver observer : observers) {
                 int tempFloor = observer.getButton().getFloor();
+                System.out.println("TEMP FLOOR = " + tempFloor);
+                System.out.println("CURRENT FLOOR = " + currentObserver.getButton().getFloor());
                 if (currentObserver != null && currentObserver.getButton().getFloor() <= tempFloor) {
                     break;
                 }
@@ -156,24 +158,68 @@ public class Elevator {
         return tempObserver;
     }
 
+    public ElevatorObserver getNextUPObserver() {
+        int floor = 7;
+
+        synchronized (observers) {
+            ElevatorObserver ob = currentObserver;
+
+            for (int i = 0; i < observers.size(); i++) {
+                int tempFloor = observers.get(i).getButton().getFloor();
+
+                if (tempFloor < floor) {
+                    floor = tempFloor;
+                    ob = observers.get(i);
+                }
+            }
+            System.out.println("UP ob = " + ob.getButton().getFloor());
+            return ob;
+        }
+
+    }
+    
+    public ElevatorObserver getNextDOWNObserver() {
+        int floor = 7;
+
+        synchronized (observers) {
+            ElevatorObserver ob = currentObserver;
+
+            for (int i = 0; i < observers.size(); i++) {
+                int tempFloor = observers.get(i).getButton().getFloor();
+
+                if (tempFloor > floor) {
+                    floor = tempFloor;
+                    ob = observers.get(i);
+                }
+            }
+            System.out.println("DOWN ob = " + ob.getButton().getFloor());
+            return ob;
+        }
+
+    }
+
     public ElevatorObserver getNextDownObserver() {
         ElevatorObserver tempObserver = null;
 
         synchronized (observers) {
-            if (currentObserver != null && observers.contains(currentObserver)) {
+            if (observers.contains(currentObserver)) {
+                System.out.println("returning observer");
                 return currentObserver;
             }
 
             for (ElevatorObserver observer : observers) {
                 int tempFloor = observer.getButton().getFloor();
-                if (currentObserver != null && currentObserver.getButton().getFloor() >= tempFloor) {
+                System.out.println("tempfloor " + tempFloor);
+                if (currentObserver.getButton().getFloor() >= tempFloor) {
                     break;
                 }
                 tempObserver = observer;
             }
         }
-        if (currentObserver != null && tempObserver != null) {
+        if (currentObserver != null) {
             System.out.println("DOWN: currentOb = " + currentObserver.getButton().getFloor());
+        }
+        if (tempObserver != null) {
             System.out.println("DOWN: tempObserver = " + tempObserver.getButton().getFloor());
         }
 
@@ -200,8 +246,10 @@ public class Elevator {
 
         if (f % 1 < 0.001 || f % 1 > 0.999) {
             // System.out.println("f = " + f);
-            for (ElevatorObserver observer : observers) {
-                observer.signalPosition((int) f);
+            synchronized (observers) {
+                for (ElevatorObserver observer : observers) {
+                    observer.signalPosition((int) f);
+                }
             }
         }
 
