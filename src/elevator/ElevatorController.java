@@ -123,18 +123,20 @@ public class ElevatorController implements Runnable {
         while (observer != null) {
             int dir = 0;
 
-            if (elevator.Getpos() <= observer.getButton().getFloor()) {
+            if (elevator.Getpos() - 0.001 < observer.getButton().getFloor()) {
                 dir = 1;
-            } else if (elevator.Getpos() >= observer.getButton().getFloor()) {
+            } else if (elevator.Getpos() + 0.001 > observer.getButton().getFloor()) {
                 dir = -1;
             }
-            stream.println("m " + elevator.getNumber() + " " + dir);
+            if(dir != 0) {
+                stream.println("m " + elevator.getNumber() + " " + dir);
 
-            observer.waitPosition();
-            // elevator.removeObserver(observer);
-            if (shouldStop.get()) {
-                shouldStop.set(false);
-                stopElevator(elevator);
+                observer.waitPosition();
+                // elevator.removeObserver(observer);
+                if (shouldStop.get()) {
+                    shouldStop.set(false);
+                    stopElevator(elevator);
+                }
             }
 
             if (dir == 1) {

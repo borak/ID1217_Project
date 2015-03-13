@@ -88,7 +88,17 @@ public class Elevator {
     }
 
     public void registerObserver(ElevatorObserver observer) {
+        
         synchronized (observers) {
+            if (currentObserver != null && currentObserver.getButton().getFloor() == observer.getButton().getFloor()) {
+                return;
+            }
+            for (ElevatorObserver observer1 : observers) {
+                if (observer1.getButton().getFloor() == observer.getButton().getFloor()
+                        && observer1.getButton().getDir() == observer.getButton().getDir()) {
+                    return;
+                }
+            }
             observers.add(observer);
 
             Collections.sort(observers, new Comparator<ElevatorObserver>() {
@@ -108,6 +118,7 @@ public class Elevator {
             }
             int currentDir = currentObserver.getButton().getDir();
             int currentFloor = currentObserver.getButton().getFloor();
+            
             if ((currentDir == observer.getButton().getDir())
                     && ((currentDir == -1) && (currentFloor < observer.getButton().getFloor())
                     || ((currentDir == 1) && (currentFloor > observer.getButton().getFloor())))) {
