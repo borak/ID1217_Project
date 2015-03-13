@@ -67,7 +67,7 @@ public class ElevatorController implements Runnable {
                 elevator = allElevators[0];
             } else {
                 double movingDistance = Double.MAX_VALUE;
-                double emptyDistance = Double.MIN_VALUE;
+                double emptyDistance = Double.MAX_VALUE;
                 Elevator emptyElevator = null;
                 Elevator movingElevator = null;
 
@@ -137,18 +137,17 @@ public class ElevatorController implements Runnable {
                 stopElevator(elevator);
             }
 
-            // todo DOWN FUNKAR EJ 
             if (dir == 1) {
-                observer = elevator.getNextUPObserver();
-//                if (observer == null) {
-//                    observer = elevator.getNextDownObserver();
-//                }
-            } else if (dir == -1) {
-                observer = elevator.getNextDOWNObserver();
-//                if (observer == null) {
-//                    observer = elevator.getNextUpObserver();
-//                }
-                System.out.println("OBSERVER OHW = " + observer.getButton().getFloor());
+                observer = elevator.getNextUpObserver();
+                if (observer == null) {
+                    observer = elevator.getNextDownObserver();
+                }
+            } else/*if (dir == -1)*/ {
+                observer = elevator.getNextDownObserver();
+                if (observer == null) {
+                    observer = elevator.getNextUpObserver();
+                }
+               // System.out.println("OBSERVER OHW = " + observer.getButton().getFloor());
             }
 
         }
@@ -158,7 +157,7 @@ public class ElevatorController implements Runnable {
     }
 
     private void simulateDoors(Elevator elevator) {
-        System.out.println("simulatedoors for " + elevator.getNumber());
+        //System.out.println("simulatedoors for " + elevator.getNumber());
         stream.println("d " + elevator.getNumber() + " 1");
         try {
             Thread.sleep(3000);
@@ -171,7 +170,7 @@ public class ElevatorController implements Runnable {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        System.out.println("done simulating ");
+        //System.out.println("done simulating ");
     }
 
     /**
@@ -201,7 +200,7 @@ public class ElevatorController implements Runnable {
     }
 
     public void stopElevator(Elevator elevator) {
-        System.out.println("stopElevator for " + elevator.getNumber());
+        //System.out.println("stopElevator for " + elevator.getNumber());
         stream.println("m " + elevator.getNumber() + " 0");
         simulateDoors(elevator);
 
@@ -311,7 +310,7 @@ public class ElevatorController implements Runnable {
         @Override
         public void interruptWait() {
             if (waitingThread != null) {
-                System.out.println("interrupted thread!");
+                //System.out.println("interrupted thread!");
                 waitingThread.interrupt();
             }
         }

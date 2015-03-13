@@ -97,6 +97,11 @@ public class Elevator {
                 }
             });
 
+            for (ElevatorObserver observer1 : observers) {
+                System.out.print(observer1.getButton().getFloor() + ", ");
+            }
+            System.out.println("");
+            
             if (currentObserver == null) {
                 currentObserver = observer;
                 return;
@@ -149,12 +154,13 @@ public class Elevator {
             }
         }
 
-        if (currentObserver != null && tempObserver != null) {
+        if (tempObserver != null) {
+            currentObserver = tempObserver;
             System.out.println("UP: currentOb = " + currentObserver.getButton().getFloor());
             System.out.println("UP: tempObserver = " + tempObserver.getButton().getFloor());
-        }
+        } 
 
-        currentObserver = tempObserver;
+        //currentObserver = tempObserver;
         return tempObserver;
     }
 
@@ -220,10 +226,10 @@ public class Elevator {
             System.out.println("DOWN: currentOb = " + currentObserver.getButton().getFloor());
         }
         if (tempObserver != null) {
+            currentObserver = tempObserver;
             System.out.println("DOWN: tempObserver = " + tempObserver.getButton().getFloor());
         }
 
-        currentObserver = tempObserver;
         return tempObserver;
     }
 
@@ -258,20 +264,7 @@ public class Elevator {
 
     public void removeObserver(ElevatorObserver observer) {
         synchronized (observers) {
-//            int index = 0;
-//            if (currentObserver.getButton().getDir() == 1) {
-//                index = observers.indexOf(observer) + 1;
-//            } else if (currentObserver.getButton().getDir() == -1) {
-//                index = observers.indexOf(observer) - 1;
-//            }
             observers.remove(observer);
-
-//            if (observers.size() < index) {
-//                index = observers.size();
-//            } else if (index < 0) {
-//                index = 0;
-//            }
-//            currentObserver = observers.get(index);
         }
     }
 
