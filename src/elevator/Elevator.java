@@ -90,9 +90,6 @@ public class Elevator {
     public void registerObserver(ElevatorObserver observer) {
         
         synchronized (observers) {
-            if (currentObserver != null && currentObserver.getButton().getFloor() == observer.getButton().getFloor()) {
-                return;
-            }
             for (ElevatorObserver observer1 : observers) {
                 if (observer1.getButton().getFloor() == observer.getButton().getFloor()
                         && observer1.getButton().getDir() == observer.getButton().getDir()) {
@@ -130,17 +127,6 @@ public class Elevator {
             }
         }
     }
-//    private void sortObservers() {
-//        for (int i = 0; i < observers.size(); i++) {
-//            int num = observers.get(i).getButton().getFloor();
-//            for (int j = 0; j < observers.size(); j++) {
-//                int num2 = observers.get(j).getButton().getFloor();
-//                if (num2 > num) {
-//
-//                }
-//            }
-//       }
-//  }
 
     public ElevatorObserver getCurrentObserver() {
         return currentObserver;
@@ -261,7 +247,8 @@ public class Elevator {
             return;
         }
 
-        if (f % 1 < 0.001 || f % 1 > 0.999) {
+        System.out.println("f = " + f + " f%1= " + f % 1);
+        if (f % 1 < 0.04 || f % 1 > 0.999) {
             // System.out.println("f = " + f);
             synchronized (observers) {
                 for (ElevatorObserver observer : observers) {
