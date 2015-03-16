@@ -92,8 +92,9 @@ public class Elevator {
         synchronized (observers) {
             for (ElevatorObserver observer1 : observers) {
                 if (observer1.getButton().getFloor() == observer.getButton().getFloor()
-                        && observer1.getButton().getDir() == observer.getButton().getDir()) {
-                    observer.signalPosition((int)Getpos());
+                        && (observer1.getButton().getDir() == observer.getButton().getDir()
+                        || observers.isEmpty())) {
+                    //observer.signalPosition((int)Getpos());
                     return;
                 }
             }
@@ -243,8 +244,8 @@ public class Elevator {
             return;
         }
 
-        //System.out.println("f = " + f + " f%1= " + f % 1);
-        if (f % 1 < 0.05 || f % 1 > 0.96) {
+        //System.out.println("f = " + f + " f%1= " + f % 1); 
+        if (f % 1 < 0.04 || f % 1 > 0.97) {
             System.out.println("signaling floor = " + (int) Math.round(f));
             synchronized (observers) {
                 for (ElevatorObserver observer : observers) {
@@ -254,6 +255,10 @@ public class Elevator {
         }
 
         boxpos = f; //still here ?
+    }
+    
+    public int getCurrentFloor() {
+        return (int) Math.round(boxpos);
     }
 
     public void removeObserver(ElevatorObserver observer) {

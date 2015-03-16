@@ -77,13 +77,17 @@ public class ElevatorController implements Runnable {
                     Elevator tempElevator = allElevators[i];
 
                     double tempDistance = Math.abs(currentFloor - tempElevator.Getpos());
-
+                    
                     if (tempElevator.Getdir() == dir) {
                         if (tempDistance < movingDistance || movingElevator == null) {
                             movingElevator = tempElevator;
                             movingDistance = tempDistance;
                         }
                     } else if (tempElevator.Getdir() == 0) {
+                        if (tempDistance < 0.5) {
+                            emptyElevator = tempElevator;
+                            break;
+                        }
                         if (tempDistance < emptyDistance || emptyElevator == null) {
                             emptyElevator = tempElevator;
                             emptyDistance = tempDistance;
@@ -129,15 +133,19 @@ public class ElevatorController implements Runnable {
             } else if (elevator.Getpos() + 0.001 > observer.getButton().getFloor()) {
                 dir = -1;
             }
-            if(dir != 0) {
+            if(dir != 0 && elevator.getCurrentFloor() != observer.getButton().getFloor()) {
                 stream.println("m " + elevator.getNumber() + " " + dir);
 
                 observer.waitPosition();
                 // elevator.removeObserver(observer);
-                if (shouldStop.get()) {
-                    shouldStop.set(false);
-                    stopElevator(elevator);
-                }
+            } else if (dir == 0) {
+                shouldStop.set(true);
+            }
+            
+            if (shouldStop.get()) {
+                shouldStop.set(false);
+                elevator.removeObserver(observer);
+                stopElevator(elevator);
             }
 
             if (dir == 1) {
