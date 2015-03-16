@@ -14,4 +14,6 @@ interface ElevatorObserver extends Comparable<ElevatorObserver> {
     
     void interruptWait();
 
+    void signalStop();
+
 }

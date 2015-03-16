@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.swing.JComponent;
@@ -65,6 +66,7 @@ public class Elevator {
     private int number = 0;
 
     private ElevatorObserver currentObserver;
+    private AtomicBoolean stop = new AtomicBoolean();
 
     private JComponent window;
     private JComponent scale;
@@ -428,4 +430,18 @@ public class Elevator {
     JComponent Getscale() {
         return scale;
     }
+
+    public boolean isStop() {
+        System.out.println("stop = " + stop);
+        return stop.get();
+    }
+
+    public synchronized void setStop(boolean stop) {
+        //currentObserver.signalStop();
+        this.stop.set(stop);
+    }
+    
+    
+
+
 }
