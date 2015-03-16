@@ -56,6 +56,13 @@ public class ElevatorController implements Runnable {
         }
     }
 
+    /**
+     * TODO: testcase
+     * tryck 2 ggr på samma våning så åker båda hissarna med.
+     * exp: 1 åker om det inte va 2 olika håll.
+     * lös 1: begränsa kön i förväg genom att inte lägga in den i kön.
+     * gör det genom att titta om någon annan elevator har den i kön?
+     */
     public void pressButton(int currentFloor, int dir) {
         System.out.println("Button pressed on floor " + currentFloor);
 
@@ -68,36 +75,70 @@ public class ElevatorController implements Runnable {
             } else {
                 double movingDistance = Double.MAX_VALUE;
                 double emptyDistance = Double.MAX_VALUE;
+                double floorDistance = Double.MAX_VALUE;
                 Elevator emptyElevator = null;
                 Elevator movingElevator = null;
+                Elevator floorElevator = null;
 
                 for (int i = 0; i < allElevators.length - 1; i++) {
                     Elevator tempElevator = allElevators[i];
 
                     double tempDistance = Math.abs(currentFloor - tempElevator.Getpos());
-
                     if (tempElevator.Getdir() == dir) {
+                        //närmare
                         if (tempDistance < movingDistance || movingElevator == null) {
                             movingElevator = tempElevator;
                             movingDistance = tempDistance;
                         }
-                    } else if (tempElevator.Getdir() == 0) {
+                    } //stilla  
+                    else if (tempElevator.Getdir() == 0) {
+                        //samma våning - öppna
                         if (tempDistance < 0.5) {
                             emptyElevator = tempElevator;
                             break;
                         }
+                        //närmare
                         if (tempDistance < emptyDistance || emptyElevator == null) {
                             emptyElevator = tempElevator;
                             emptyDistance = tempDistance;
                         }
+                    } // olika riktningar
+                    else if (tempElevator.Getdir() == 1) { //påväg upp
+                        //nuvarande pos till top
+                        int tempFloorDistance = (tempElevator.getQueueTopFloor() - tempElevator.getCurrentFloor())
+                                // top ner till önskad
+                                + (tempElevator.getQueueTopFloor() - currentFloor);
+                        if (tempFloorDistance < floorDistance) {
+                            floorDistance = tempFloorDistance;
+                            floorElevator = tempElevator;
+                        }
+                    } else { 
+                        //nuvarande pos ner till bot
+                        int tempFloorDistance = (tempElevator.getCurrentFloor() - tempElevator.getQueueBotFloor())
+                                //bot upp till önskad
+                                + (currentFloor - tempElevator.getQueueBotFloor());
+                        if (tempFloorDistance < floorDistance || floorElevator == null) {
+                            floorDistance = tempFloorDistance;
+                            floorElevator = tempElevator;
+                        }
                     }
                 }
-                if (movingDistance < emptyDistance) {
-                    elevator = movingElevator;
-                } else {
+                
+                if (emptyElevator != null) {
+                    System.out.println("empty elev taken");
                     elevator = emptyElevator;
+                } else if (movingDistance < floorDistance && movingElevator != null) {
+                    System.out.println("moving elev taken");
+                    elevator = movingElevator;
+                } else  /* if (floorElevator != null) */{
+                    System.out.println("floor elev taken");
+                    elevator = floorElevator;
                 }
-
+                
+                if (elevator == null) {
+                    throw new RuntimeException("Unexpected null pointer exception when searching for elevator");
+                }
+                
                 ElevatorButton button = new ElevatorButton(currentFloor, dir);
                 InnerObserver observer = new InnerObserver(elevator, button);
                 elevator.registerObserver(observer);

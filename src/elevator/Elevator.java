@@ -67,6 +67,8 @@ public class Elevator {
 
     private ElevatorObserver currentObserver;
     private AtomicBoolean stop = new AtomicBoolean();
+    private int queueTopFloor = -1;
+    private int queueBotFloor = -1;
 
     private JComponent window;
     private JComponent scale;
@@ -96,7 +98,6 @@ public class Elevator {
                 if (observer1.getButton().getFloor() == observer.getButton().getFloor()
                         && (observer1.getButton().getDir() == observer.getButton().getDir()
                         || observers.isEmpty())) {
-                    //observer.signalPosition((int)Getpos());
                     return;
                 }
             }
@@ -107,7 +108,9 @@ public class Elevator {
                     return firstObserver.compareTo(nextObserver);
                 }
             });
-
+            
+            updateQueueBotTopStatus();
+            
             for (ElevatorObserver observer1 : observers) {
                 System.out.print(observer1.getButton().getFloor() + ", ");
             }
@@ -129,6 +132,19 @@ public class Elevator {
                 System.out.println("currentOb = " + currentObserver.getButton().getFloor());
                 tempObserver.interruptWait();
             }
+        }
+    }
+    
+    private void updateQueueBotTopStatus() {
+        try {
+            queueTopFloor = observers.get(observers.size()-1).getButton().getFloor();
+        } catch (Exception e) {
+            queueTopFloor = getCurrentFloor();
+        }
+        try {
+            queueBotFloor = observers.get(0).getButton().getFloor();
+        } catch (Exception e) {
+            queueBotFloor = getCurrentFloor();
         }
     }
 
@@ -259,6 +275,18 @@ public class Elevator {
         boxpos = f; //still here ?
     }
     
+    public int getQueueTopFloor() {
+        synchronized (observers) {
+            return queueTopFloor;
+        }
+    }
+    
+    public int getQueueBotFloor() {
+        synchronized (observers) {
+            return queueBotFloor;
+        }
+    }
+    
     public int getCurrentFloor() {
         return (int) Math.round(boxpos);
     }
@@ -266,6 +294,7 @@ public class Elevator {
     public void removeObserver(ElevatorObserver observer) {
         synchronized (observers) {
             observers.remove(observer);
+            updateQueueBotTopStatus();
         }
     }
 
