@@ -71,13 +71,13 @@ public class ElevatorController implements Runnable {
                 Elevator emptyElevator = null;
                 Elevator movingElevator = null;
 
+                //algoritmen som behöver ändras
+                //hittar närmaste men inte i rätt direction
                 for (int i = 0; i < allElevators.length - 1; i++) {
                     Elevator tempElevator = allElevators[i];
 
-                    double tempDistance = (currentFloor - tempElevator.Getpos());
-                    if (tempDistance < 0) {
-                        tempDistance *= -1;
-                    }
+                    double tempDistance = Math.abs(currentFloor - tempElevator.Getpos());
+
                     if (tempElevator.Getdir() == dir) {
                         if (tempDistance < movingDistance || movingElevator == null) {
                             movingElevator = tempElevator;
@@ -120,6 +120,7 @@ public class ElevatorController implements Runnable {
         if (observer == null) {
             observer = elevator.getNextDownObserver();
         }
+        System.out.println("elevator queue handler = " + elevator.getNumber() + " started.");
         while (observer != null) {
             int dir = 0;
 
@@ -141,21 +142,29 @@ public class ElevatorController implements Runnable {
 
             if (dir == 1) {
                 observer = elevator.getNextUpObserver();
+                System.out.println("qh1: getnext UP");
                 if (observer == null) {
                     observer = elevator.getNextDownObserver();
+                    System.out.println("qh2: getnext DOWN");
                 }
             } else/*if (dir == -1)*/ {
                 observer = elevator.getNextDownObserver();
+                System.out.println("qh1: getnext DOWN");
                 if (observer == null) {
                     observer = elevator.getNextUpObserver();
+                    System.out.println("qh2: getnext UP");
                 }
                // System.out.println("OBSERVER OHW = " + observer.getButton().getFloor());
+            }
+            if (observer != null) {
+                System.out.println("getnext="+observer.getButton().getFloor());
             }
 
         }
         synchronized (activeElevators) {
             activeElevators.remove(elevator);
         }
+        System.out.println("elevator queue handler = " + elevator.getNumber() + " ended.");
     }
 
     private void simulateDoors(Elevator elevator) {
