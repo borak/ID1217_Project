@@ -124,11 +124,14 @@ public class ElevatorController implements Runnable {
                     }
                 }
                 
-                if (emptyElevator != null) {
+                if (movingElevator != null) {
+                    System.out.println("moving1 elev taken");
+                     elevator = movingElevator;
+                } else if (emptyElevator != null) {
                     System.out.println("empty elev taken");
                     elevator = emptyElevator;
-                } else if (movingDistance < floorDistance && movingElevator != null) {
-                    System.out.println("moving elev taken");
+                } else if (movingDistance < floorDistance) {
+                    System.out.println("moving2 elev taken");
                     elevator = movingElevator;
                 } else  /* if (floorElevator != null) */{
                     System.out.println("floor elev taken");
