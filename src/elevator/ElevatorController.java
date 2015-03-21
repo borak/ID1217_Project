@@ -30,10 +30,16 @@ public class ElevatorController implements Runnable {
     private Socket socket;
     private PrintWriter stream;
     private AtomicBoolean shouldStop = new AtomicBoolean();
+    private Lock lock = new ReentrantLock();
+    private Condition[] condition;
 
     public ElevatorController(Elevators elevators) {
         this.allElevators = elevators.allElevators;
         shouldStop.getAndSet(false);
+        condition = new Condition[elevators.allElevators.length];
+        for (int i=0; i< elevators.allElevators.length; i++) {
+            condition[i] = lock.newCondition();
+        }
     }
 
     public void createSocket(String hostName, int port) {
@@ -124,9 +130,9 @@ public class ElevatorController implements Runnable {
                     }
                 }
                 
-                if (movingElevator != null) {
+                if (movingElevator != null) { // same dir är inte alltid bra
                     System.out.println("moving1 elev taken");
-                     elevator = movingElevator;
+                    elevator = movingElevator;
                 } else if (emptyElevator != null) {
                     System.out.println("empty elev taken");
                     elevator = emptyElevator;
@@ -296,8 +302,8 @@ public class ElevatorController implements Runnable {
 
     class InnerObserver implements ElevatorObserver {
 
-        Lock lock = new ReentrantLock();
-        Condition condition = lock.newCondition();
+        //static Lock lock = new ReentrantLock();
+        //Condition condition = lock.newCondition();
         Elevator elevator;
         ElevatorButton button;
         Semaphore semaphore = new Semaphore(1);
@@ -314,7 +320,10 @@ public class ElevatorController implements Runnable {
             if (button.getFloor() == floor) {
                 shouldStop.set(true);
             }
-            semaphore.release();
+            //semaphore.release();
+            lock.lock();
+            condition[elevator.getNumber()].signalAll();
+            lock.unlock();
         }
 
         @Override
@@ -327,7 +336,12 @@ public class ElevatorController implements Runnable {
             if (floor >= elevator.Getpos() - 0.001) {
                 while (elevator.Getpos() + 0.001 <= floor) {
                     try {
-                        semaphore.acquire();
+                        lock.lock();
+                        try {
+                            condition[elevator.getNumber()].await();
+                        } finally {
+                            lock.unlock();
+                        }
                     } catch (InterruptedException ex) {
                         System.out.println(this.getFloor() + " INTERRUPT!");
                         return;
@@ -336,7 +350,12 @@ public class ElevatorController implements Runnable {
             } else {
                 while (elevator.Getpos() - 0.001 >= floor) {
                     try {
-                        semaphore.acquire();
+                        lock.lock();
+                        try {
+                            condition[elevator.getNumber()].await();
+                        } finally {
+                            lock.unlock();
+                        }
                     } catch (InterruptedException ex) {
                         System.out.println(this.getFloor() + " INTERRUPT!");
                         return;

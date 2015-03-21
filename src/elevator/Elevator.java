@@ -265,11 +265,17 @@ public class Elevator {
         //System.out.println("f = " + f + " f%1= " + f % 1); 
         if (f % 1 < 0.04 || f % 1 > 0.97) {
             System.out.println("signaling floor = " + (int) Math.round(f));
+            ElevatorObserver observer = null;
             synchronized (observers) {
-                for (ElevatorObserver observer : observers) {
-                    observer.signalPosition((int) Math.round(f));
+                for (ElevatorObserver observerTemp : observers) {
+                    observer = observerTemp;
+                    if(observer != null) {
+                        break;
+                    }
+                    //observers.get(0).signalPosition((int) Math.round(f));
                 }
             }
+            if(observer != null) observer.signalPosition((int) Math.round(f));
         }
 
         boxpos = f; //still here ?
