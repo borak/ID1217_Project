@@ -90,14 +90,14 @@ public class ElevatorController implements Runnable {
                     Elevator tempElevator = allElevators[i];
 
                     double tempDistance = Math.abs(currentFloor - tempElevator.Getpos());
-                    if (tempElevator.Getdir() == dir) {
+                    if (tempElevator.getCurrentObserver() != null && tempElevator.getCurrentObserver().getButton().getDir() == dir) {//tempElevator.Getdir() == dir) {
                         //närmare
                         if (tempDistance < movingDistance || movingElevator == null) {
                             movingElevator = tempElevator;
                             movingDistance = tempDistance;
                         }
                     } //stilla  
-                    else if (tempElevator.Getdir() == 0) {
+                    else if (tempElevator.getCurrentObserver() == null || tempElevator.getCurrentObserver().getButton().getDir() == 0) {//tempElevator.Getdir() == 0) {
                         //samma våning - öppna
                         if (tempDistance < 0.5) {
                             emptyElevator = tempElevator;
@@ -109,7 +109,7 @@ public class ElevatorController implements Runnable {
                             emptyDistance = tempDistance;
                         }
                     } // olika riktningar
-                    else if (tempElevator.Getdir() == 1) { //påväg upp
+                    else if (tempElevator.getCurrentObserver().getButton().getDir() == 1) {//tempElevator.Getdir() == 1) { //påväg upp
                         //nuvarande pos till top
                         int tempFloorDistance = (tempElevator.getQueueTopFloor() - tempElevator.getCurrentFloor())
                                 // top ner till önskad
@@ -130,7 +130,7 @@ public class ElevatorController implements Runnable {
                     }
                 }
                 
-                if (movingElevator != null) { // same dir är inte alltid bra
+                if (movingElevator != null && movingElevator.getCurrentObserver().getButton().getDir() == dir) { // same dir är inte alltid bra
                     System.out.println("moving1 elev taken");
                     elevator = movingElevator;
                 } else if (emptyElevator != null) {
@@ -318,7 +318,7 @@ public class ElevatorController implements Runnable {
         public void signalPosition(int floor) {
             stream.println("s " + elevator.getNumber() + " " + floor);
             if (button.getFloor() == floor) {
-                shouldStop.set(true);
+                //shouldStop.set(true);
             }
             //semaphore.release();
             lock.lock();
@@ -362,6 +362,7 @@ public class ElevatorController implements Runnable {
                     }
                 }
             }
+            shouldStop.set(true);
             waitingThread = null;
             elevator.removeObserver(InnerObserver.this);
         }
