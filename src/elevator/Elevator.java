@@ -222,16 +222,19 @@ public class Elevator {
 
     public ElevatorObserver getNextDownObserver() {
         ElevatorObserver tempObserver = null;
-
+        //är på 3an (current floor 3 ska åka ner)
+        //1 , 2 i listan
+        //tar ettan istället för 2an
         synchronized (observers) {
             if (observers.contains(currentObserver)) {
                 System.out.println("returning observer");
                 return currentObserver;
             }
-
+            // 1 sätter observer, 2 -> 1, 1, 3>1 är sant men den ska fortsätta, 
+            //
             for (ElevatorObserver observer : observers) {
                 if (currentObserver != null && tempObserver != null 
-                        && currentObserver.getButton().getFloor() > tempObserver.getButton().getFloor()) {
+                        && currentObserver.getButton().getFloor() < observer.getButton().getFloor()) {//current ... > tempObserver.getButton().getFloor()) {
                     break;
                 }
                 tempObserver = observer;
