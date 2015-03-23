@@ -8,10 +8,16 @@ public class ElevatorButton {
     
     private int floor;
     private int dir;
+    private final boolean isPanelButton;
 
-    public ElevatorButton(int floor, int dir) {
+    public ElevatorButton(int floor, int dir, boolean isPanelButton) {
         this.floor = floor;
         this.dir = dir;
+        this.isPanelButton = isPanelButton;
+    }
+
+    public boolean isPanelButton() {
+        return isPanelButton;
     }
     
     public int getFloor() {
