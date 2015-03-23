@@ -77,6 +77,9 @@ public class ElevatorController implements Runnable {
             startWaitTimer();
 
             if (allElevators.length == 1) {
+                if(allElevators[0].isStop()) {
+                    return;
+                }
                 elevator = allElevators[0];
             } else {
                 double movingDistance = Double.MAX_VALUE;
@@ -88,6 +91,9 @@ public class ElevatorController implements Runnable {
 
                 for (int i = 0; i < allElevators.length - 1; i++) {
                     Elevator tempElevator = allElevators[i];
+                    if(tempElevator.isStop()) {
+                        continue;
+                    }
 
                     double tempDistance = Math.abs(currentFloor - tempElevator.Getpos());
                     if (tempElevator.getCurrentObserver() != null && tempElevator.getCurrentObserver().getButton().getDir() == dir) {//tempElevator.Getdir() == dir) {
@@ -129,17 +135,23 @@ public class ElevatorController implements Runnable {
                         }
                     }
                 }
-                
-                if (movingElevator != null && movingElevator.getCurrentObserver().getButton().getDir() == dir) { // same dir är inte alltid bra
+                boolean needToChangeCurrentDir = true;
+                if(movingElevator != null && dir == -1 && currentFloor < movingElevator.Getpos()) {
+                    needToChangeCurrentDir = false;
+                } else if (movingElevator != null && dir == 1 && currentFloor > movingElevator.Getpos()) {
+                    needToChangeCurrentDir = false;
+                }
+                if (movingElevator != null && movingElevator.getCurrentObserver().getButton().getDir() == dir 
+                        && !needToChangeCurrentDir) { 
                     System.out.println("moving1 elev taken");
                     elevator = movingElevator;
                 } else if (emptyElevator != null) {
                     System.out.println("empty elev taken");
                     elevator = emptyElevator;
-                } else if (movingDistance < floorDistance) {
+                } else if (movingElevator != null && movingDistance < floorDistance && !needToChangeCurrentDir) {
                     System.out.println("moving2 elev taken");
                     elevator = movingElevator;
-                } else  /* if (floorElevator != null) */{
+                } else /* if (floorElevator != null)*/ {
                     System.out.println("floor elev taken");
                     elevator = floorElevator;
                 }
@@ -168,60 +180,71 @@ public class ElevatorController implements Runnable {
             }
             activeElevators.add(elevator);
         }
-
-        ElevatorObserver observer = elevator.getNextUpObserver();
-        if (observer == null) {
-            observer = elevator.getNextDownObserver();
-        }
-        System.out.println("elevator queue handler = " + elevator.getNumber() + " started.");
-        while (observer != null) {
-            if (elevator.isStop()) {
-                stopElevator(elevator);
-                return;
-            }
-            int dir = 0;
-
-            if (elevator.Getpos() - 0.001 < observer.getButton().getFloor()) {
-                dir = 1;
-            } else if (elevator.Getpos() + 0.001 > observer.getButton().getFloor()) {
-                dir = -1;
-            }
-
-            if (dir != 0 && elevator.getCurrentFloor() != observer.getButton().getFloor()) {
-                stream.println("m " + elevator.getNumber() + " " + dir);
-
-                observer.waitPosition();
-            } else {
-                shouldStop.set(true);
-            }
-
-            if (shouldStop.get()) {
-                shouldStop.set(false);
-                elevator.removeObserver(observer);
-                stopElevator(elevator);
-            }
-
-            if (dir == 1) {
-                observer = elevator.getNextUpObserver();
-                if (observer == null) {
-                    observer = elevator.getNextDownObserver();
-                }
-            } else/*if (dir == -1)*/ {
+        try {
+            System.out.println("e:"+elevator.getNumber()+" 2");
+            ElevatorObserver observer = elevator.getNextUpObserver();
+            if (observer == null) {
                 observer = elevator.getNextDownObserver();
-                if (observer == null) {
-                    observer = elevator.getNextUpObserver();
-                }
-                // System.out.println("OBSERVER OHW = " + observer.getButton().getFloor());
             }
-            if (observer != null) {
-                System.out.println("getnext=" + observer.getButton().getFloor());
+            System.out.println("elevator queue handler = " + elevator.getNumber() + " started.");
+            while (observer != null) {
+                System.out.println("e:"+elevator.getNumber()+" 3");
+                //System.out.println("e:"+elevator.getNumber()+" going "+observer.getButton().getDir());
+                if (elevator.isStop()) { // stoppas av pressPanel
+                    System.out.println("e:"+elevator.getNumber()+" isStop=true. returning");
+                    //stopElevator(elevator);
+                    //immediateStopElevator(elevator);
+                    return;
+                }
+                int dir = 0;
+
+                if (elevator.Getpos() - 0.001 < observer.getButton().getFloor()) {
+                    dir = 1;
+                } else if (elevator.Getpos() + 0.001 > observer.getButton().getFloor()) {
+                    dir = -1;
+                }
+
+                if (dir != 0 && elevator.getCurrentFloor() != observer.getButton().getFloor()) {
+                    stream.println("m " + elevator.getNumber() + " " + dir);
+
+                    observer.waitPosition();
+                } else {
+                    shouldStop.set(true);
+                }
+
+                if (shouldStop.get()) {
+                    shouldStop.set(false);
+                    elevator.removeObserver(observer);
+                    stopElevator(elevator);
+                }
+
+                if (dir == 1) {
+                    observer = elevator.getNextUpObserver();
+                    if (observer == null) {
+                        observer = elevator.getNextDownObserver();
+                    }
+                } else/*if (dir == -1)*/ {
+                    //if current is going down, it should not change to going up
+                    //if (observer == elevator.getCurrentObserver())
+                    observer = elevator.getNextDownObserver();
+                    
+                    if (observer == null) {
+                        observer = elevator.getNextUpObserver();
+                    }
+                    // System.out.println("OBSERVER OHW = " + observer.getButton().getFloor());
+                }
+                if (observer != null) {
+                    System.out.println("getnext=" + observer.getButton().getFloor());
+                }
+
+            }
+        } finally {
+            synchronized (activeElevators) {
+                activeElevators.remove(elevator);
             }
 
+            System.out.println("elevator queue handler = " + elevator.getNumber() + " ended.");
         }
-        synchronized (activeElevators) {
-            activeElevators.remove(elevator);
-        }
-        System.out.println("elevator queue handler = " + elevator.getNumber() + " ended.");
     }
 
     private void simulateDoors(Elevator elevator) {
@@ -258,15 +281,23 @@ public class ElevatorController implements Runnable {
                 dir = -1;
             }
 
+            if (floor == Elevators.SPECIAL_FOR_STOP) {
+                //System.out.println("STOPPING elevator " + elevator.getNumber());
+                //elevator.setStop(true);
+                immediateStopElevator(elevator);
+                return;
+            } else if (elevator.isStop()) {
+                System.out.println("elevator " + elevator.getNumber() +" SETSTOP=FALSE");
+                elevator.setStop(false); //doesnt sync well atm
+                handleButtonQueue(elevator);
+                //stream.println("m " + elevator.getNumber() + " " + elevator.getCurrentObserver().getButton().getDir());
+            }
+            
             ElevatorButton button = new ElevatorButton(floor, dir);
             InnerObserver observer = new InnerObserver(elevator, button);
             elevator.registerObserver(observer);
 
-            if (floor == Elevators.SPECIAL_FOR_STOP) {
-                System.out.println("STOPPING elevator " + elevator.getNumber());
-                elevator.setStop(true);
-            }
-
+            System.out.println("e:"+elevator.getNumber()+" 1");
             handleButtonQueue(elevator);
 
         } finally {
@@ -274,6 +305,13 @@ public class ElevatorController implements Runnable {
         }
     }
 
+    public void immediateStopElevator(Elevator elevator) {
+        System.out.println("STOPPING elevator " + elevator.getNumber());
+        elevator.setStop(true);
+        stream.println("m " + elevator.getNumber() + " 0");
+        //ta bort alla buttons tryckningar å anroppa pressButton
+    }
+    
     public void stopElevator(Elevator elevator) {
         stream.println("m " + elevator.getNumber() + " 0");
         simulateDoors(elevator);
@@ -320,10 +358,12 @@ public class ElevatorController implements Runnable {
             if (button.getFloor() == floor) {
                 //shouldStop.set(true);
             }
-            //semaphore.release();
             lock.lock();
-            condition[elevator.getNumber()].signalAll();
-            lock.unlock();
+            try {
+                condition[elevator.getNumber()].signalAll();
+            } finally {
+                lock.unlock();
+            }
         }
 
         @Override
@@ -398,11 +438,14 @@ public class ElevatorController implements Runnable {
 
         @Override
         public void signalStop() {
-            try {
+            if (waitingThread != null) {
+                waitingThread.interrupt();
+            }
+            /*try {
                 Thread.currentThread().wait();
             } catch (InterruptedException ex) {
                 Logger.getLogger(ElevatorController.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            }*/
         }
     }
 }

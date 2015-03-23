@@ -222,16 +222,13 @@ public class Elevator {
 
     public ElevatorObserver getNextDownObserver() {
         ElevatorObserver tempObserver = null;
-        //är på 3an (current floor 3 ska åka ner)
-        //1 , 2 i listan
-        //tar ettan istället för 2an
+        
         synchronized (observers) {
             if (observers.contains(currentObserver)) {
                 System.out.println("returning observer");
                 return currentObserver;
             }
-            // 1 sätter observer, 2 -> 1, 1, 3>1 är sant men den ska fortsätta, 
-            //
+             //check position, going 1d from 2 -> 4d interrupts & (changes next to 4th instead o)
             for (ElevatorObserver observer : observers) {
                 if (currentObserver != null && tempObserver != null 
                         && currentObserver.getButton().getFloor() < observer.getButton().getFloor()) {//current ... > tempObserver.getButton().getFloor()) {
@@ -240,6 +237,7 @@ public class Elevator {
                 tempObserver = observer;
             }
         }
+        
         if (tempObserver != null) {
             currentObserver = tempObserver;
             System.out.println("DOWN: tempObserver = " + tempObserver.getButton().getFloor());
@@ -471,12 +469,29 @@ public class Elevator {
 
     public boolean isStop() {
         System.out.println("stop = " + stop);
-        return stop.get();
+        synchronized (stop) {
+            return stop.get();
+        }
     }
 
-    public synchronized void setStop(boolean stop) {
+    public void setStop(boolean stop) {
         //currentObserver.signalStop();
-        this.stop.set(stop);
+        synchronized (this.stop) {
+            this.stop.set(stop);
+        }
+        //signal
+        //if(currentObserver != null) currentObserver.signalStop();
+        ElevatorObserver observer = null;
+        synchronized (observers) {
+            for (ElevatorObserver observerTemp : observers) {
+                observer = observerTemp;
+                if(observer != null) {
+                    break;
+                }
+                //observers.get(0).signalPosition((int) Math.round(f));
+            }
+        }
+        if(observer != null) observer.signalStop();
     }
     
     
