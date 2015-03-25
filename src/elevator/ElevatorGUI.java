@@ -107,7 +107,7 @@ public class ElevatorGUI extends JFrame implements ActionListener, ChangeListene
         setResizable(false);
         Container contentPane = getContentPane();
         contentPane.setLayout(new BorderLayout());
-        ElevatorController controller = new ElevatorController(elevators);
+        ElevatorController controller = new ElevatorController(elevators.allElevators);
         new Thread(controller).start();
         ElevatorEvents listener = new ElevatorEvents(io.out, controller);
         io = new ElevatorIO(elevators);

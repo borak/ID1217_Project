@@ -1,7 +1,8 @@
 package elevator;
 
 /**
- *
+ * Represents a button or panel button event.
+ * 
  * @author Gabriel
  */
 public class ElevatorButton {
