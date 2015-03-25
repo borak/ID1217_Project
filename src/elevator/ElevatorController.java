@@ -390,8 +390,9 @@ public class ElevatorController implements Runnable {
             System.out.println(elevator.getNumber() + " waiting on floor ... " + floor);
             waitingThread = Thread.currentThread();
 
-            if (floor >= elevator.Getpos() - 0.001) {
-                while (elevator.Getpos() + 0.001 <= floor && elevator.getCurrentObserver() == this) {
+            if (floor >= elevator.Getpos() - 0.01) {
+                while (elevator.Getpos() + 0.01 <= floor && elevator.getCurrentObserver() == this) {
+                    System.out.println("1: "+(elevator.Getpos() + 0.01 <= floor) + " 2: " + (elevator.getCurrentObserver() == this));
                     try {
                         lock.lock();
                         try {
@@ -405,7 +406,8 @@ public class ElevatorController implements Runnable {
                     }
                 }
             } else {
-                while (elevator.Getpos() - 0.001 >= floor && elevator.getCurrentObserver() == this) {
+                while (elevator.Getpos() - 0.01 >= floor && elevator.getCurrentObserver() == this) {
+                    System.out.println("1: "+(elevator.Getpos() - 0.01 >= floor) + " "+elevator.Getpos()+ " 2: " + (elevator.getCurrentObserver() == this));
                     try {
                         lock.lock();
                         try {
@@ -419,6 +421,7 @@ public class ElevatorController implements Runnable {
                     }
                 }
             }
+            stream.println("m " + elevator.getNumber() + " 0");
             shouldStop.set(true);
             waitingThread = null;
             elevator.removeObserver(InnerObserver.this);

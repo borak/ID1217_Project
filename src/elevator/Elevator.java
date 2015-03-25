@@ -145,6 +145,9 @@ public class Elevator {
                     //|| ((elevatorDir == 1) && (currentFloor > observer.getButton().getFloor()))))
                         )
                     )
+                || (currentObserver.getButton().getFloor() == 0 //behövs det för topvåning? nej jag tror inte det
+                    && observer.getButton().getDir() == -1
+                    ) 
                 ) {
                 System.out.println(getNumber()+"ISPANEL="+observer.getButton().isPanelButton() + " eDir="+elevatorDir);
                 System.out.println(getNumber()+" " + (observer.getButton().getFloor() - Getpos()) + " >(-1) or <(1) " + (currentObserver.getButton().getFloor() - Getpos()));
@@ -159,6 +162,7 @@ public class Elevator {
                 currentObserver.interruptWait();
             }
             //System.out.println("ISPANEL="+isPanelButton);
+            
         }
     }
     
@@ -233,6 +237,18 @@ public class Elevator {
             System.out.println(getNumber()+"UP: tempObserver = " + tempObserver.getButton().getFloor());
         } 
         
+        if(currentObserver != null && currentObserver.getButton().getFloor() == 0) {
+                //om ingen upp finns ta nextDown
+                ElevatorObserver specialCaseObserver = getNextDownObserver();
+                if (specialCaseObserver != null) {
+                    return specialCaseObserver;
+                } else //{
+                    //revert
+                    if (tempObserver != null) {
+                       currentObserver = tempObserver;
+
+                }
+         }
         return tempObserver;
     }
 
@@ -265,6 +281,7 @@ public class Elevator {
                 System.out.println("TEMP FLOOR = " + tempFloor);
                 if(tempFloor < Getpos()) tempObserver = observer;
             }
+           
         }
         
         if (tempObserver != null) {
